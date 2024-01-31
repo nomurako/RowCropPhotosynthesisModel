@@ -313,7 +313,7 @@ def cal_outside_diffuse_radiation(S_global, day_of_year, Solar_elev, S_sc = 1370
         diffuse_ratio_short = 1
     elif (0.22 < atm_trans_ratio) & (atm_trans_ratio <= 0.35):
         diffuse_ratio_short = 1 - 6.4 * (atm_trans_ratio - 0.22)**2
-        print(diffuse_ratio_short)
+        #print(diffuse_ratio_short)
     elif (0.35 < atm_trans_ratio)  & (atm_trans_ratio <= K):
         diffuse_ratio_short = 1.47 - 1.66 * atm_trans_ratio
     elif K < atm_trans_ratio:
@@ -1492,18 +1492,97 @@ def main(myTime, Solar_elev, azm_sun_row_coord,
          d_y, t_d, ltt, lng, mrd,
          azm, alpha_c, beta_c,
          Ta, RH, Ca, gb, I0_beam_h, I0_dif_h, 
-         df_radiation, df_I_g_h,
-         a1, b1, a2, b2,
-         list_edge_negative_y, list_edge_positive_y,
-         x_row, y_row, z_row, x_btm, y_btm, z_btm, dV_row, dA_row, dA_btm,
+         H_row, LD,
          cfg):
     
     '''
     再利用のため、とりあえずパラメータはmain()の外に出したが、
     本当はmainの中に入れたい！
     '''
-    start = time.time()
     print("計算開始: {}における計算".format(myTime))
+    start = time.time()
+
+    #######################
+    # # ハウスに関するパラメータ。これらの値は、群落が成長しても変わらないものとする。
+    # 特に、W_rowは、時系列とともに変えることができない。。。。
+    W_ground = (cfg.W_row * cfg.n_row) + (cfg.W_path * (cfg.n_row - 1)) + cfg.W_margin * 2
+    L_ground = cfg.L_row + cfg.L_margin * 2
+    A_ground_in_a = W_ground * L_ground /100
+
+    print("-------------------------------------------")
+    print("ハウス情報")
+    print("   畝本数 = {0:3.1f}, \n   畝幅 = {1:3.1f} m, \n   通路幅 = {2:3.1f} m, \n   畝長 = {3:3.1f} m, \n   外側の畝の両側の通路幅 = {4:3.1f} m, \n   畝の前後面の外側の通路幅 = {5:3.1f} m, \n".format(cfg.n_row, cfg.W_row, cfg.W_path, cfg.L_row, cfg.W_margin, cfg.L_margin))
+    print("   ハウス幅 = {0:3.1f} m, \n   ハウス奥行 = {1:3.1f} m \n   ハウス面積 = {2:3.1f} a".format(W_ground, L_ground, A_ground_in_a))
+    print("   azimuth_row = {0:3.1f}; 真北が，畝の真正面から半時計周りに{0:3.1f}°傾いている".format(cfg.azimuth_row))
+    print("-------------------------------------------")
+
+    #######################
+    # 計算点に関するパラメータ
+    Nx_per_row = int(cfg.W_row / cfg.delta_x_row) # rowの中で，光を計算する点を作る際の，x方向への分割数
+    Ny_per_row = int(cfg.L_row / cfg.delta_y_row) # rowの中で，光を計算する点を作る際の，y方向への分割数
+    Nz_per_row = int(H_row / cfg.delta_z_row) # rowの中で，光を計算する点を作る際の，z方向への分割数
+
+    delta_x_row = cfg.W_row / Nx_per_row
+    delta_y_row = cfg.L_row / Ny_per_row
+    delta_z_row = H_row / Nz_per_row
+
+    Nx_per_btm = int(W_ground / 0.5) # 反射光計算のために，ハウスの底面に降り注ぐ光も計算する．そのときの，底の分割数．
+    Ny_per_btm = int(L_ground / 0.5)  # 反射光計算のために，通路に降り注ぐ光も計算する．そのときの，通路のy方向への分割数．
+
+    delta_x_btm = W_ground / Nx_per_btm
+    delta_y_btm = L_ground / Ny_per_btm
+
+    #n_points = Nx_per_row * Ny_per_row * Nz_per_row + Nx_per_btm * Ny_per_btm 
+
+    print("-------------------------------------------")
+    print("数値計算に関する情報")
+    print("   畝の分割数 \n   x方向:{0}, \n   y方向:{1}, \n   z方向:{2}".format(Nx_per_row, Ny_per_row, Nz_per_row))
+    print("\n   畝の分割幅 \n   Δx = {0:5.3f} m, \n   Δy = {1:5.3f} m, \n   Δz = {2:5.3f} m".format(delta_x_row, delta_y_row, delta_z_row))
+    print("\n   反射光計算のための地面の分割数 \n   x方向:{0}, \n   y方向:{1}".format(Nx_per_btm, Ny_per_btm))
+    print("\n   反射光計算のための地面の分割幅 \n   Δx = {0:5.3f} m, \n   Δy = {1:5.3f} m".format(delta_x_btm, delta_y_btm))
+    #print("\n 合計計算点数: {0} 点".format(n_points))
+
+    #######################
+    list_edge_negative_y, list_edge_positive_y =cal_row_edges(cfg.W_row, H_row, cfg.L_row, cfg.n_row, cfg.W_path, cfg.azimuth_row)
+    print("-------------------------------------------")
+    print("畝の端の座標:")
+    print("x(間口)は{0:3.1f} m から {1:3.1f} mまでの範囲．".format(list_edge_negative_y[0][0], list_edge_negative_y[-1][0]))
+    row_xedge_list = [(round(list_edge_negative_y[i][0], 2), round(list_edge_negative_y[i+1][0], 2)) for i in np.arange(0, len(list_edge_negative_y), step = 2)]
+    print("畝のx座標（左，右）")
+    print(row_xedge_list)
+    print()
+    print("y(奥行き方向)は{0:3.1f} m から {1:3.1f} mまでの範囲．".format(list_edge_negative_y[0][1], list_edge_positive_y[0][1]))
+
+    print("-------------------------------------------")
+
+
+    #######################
+    # 散乱光の数値計算に関するパラメータ
+    #delta = np.pi/1800 # 90 deg や 0 degなどでは，三角関数の計算値が不安定になる可能性があるので，そこを除外するためにdeltaを足し引きする．
+    # a1, b1, N1: diffuse radiationの計算における，betaの端点および分割数．
+    #N1 = 2 # まずN1分割から計算する．分割数を2倍ずつ増やして，増やす前後の計算値を比較して，収束判定する．
+    a1 = cfg.delta / 1.5
+    b1 = np.pi / 2 - cfg.delta
+
+    # a2, b2, N2: diffuse radiationの計算における，azmの端点および分割数
+    #N2 = 4 # まずN2分割から計算する．分割数を2倍ずつ増やして，増やす前後の計算値を比較して，収束判定する．
+    a2 = cfg.delta / 1.5
+    b2 = 2 * np.pi - cfg.delta
+
+    #max_iter = 10 # 散乱光の計算の最大反復数
+
+    print("\n散乱光・反射光の収束判定")
+    print("   最大繰り返し計算数:{0} 回, \n   許容誤差 = {1} umol m-2 s-1".format(cfg.max_iter, cfg.acceptable_absolute_error))
+    print("-------------------------------------------")
+
+    # 計算点 (df_radiation)
+    x_row, y_row, z_row, x_btm, y_btm, z_btm, dV_row, dA_row, dA_btm = create_grid_points_uniform(list_edge_negative_y, list_edge_positive_y, Nx_per_row, Ny_per_row, Nz_per_row, Nx_per_btm, Ny_per_btm, cfg.W_margin, cfg.L_margin)
+    df_radiation = pd.DataFrame(np.array([x_row, y_row, z_row, np.ones_like(x_row)*dV_row, np.ones_like(x_row)*dA_row]).reshape(5,-1).T, columns = ["x", "y", "z", "dV", "dA"])
+    
+    # 反射光の計算
+    # まずは地表面へ降り注ぐ日射の計算．
+    #x_btm, y_btm, z_btm = create_grid_points_bottom(list_edge_negative_y, list_edge_positive_y, Nx_per_btm, Ny_per_btm, W_margin, L_margin)
+    df_I_g_h = pd.DataFrame(np.array(np.broadcast_arrays(x_btm, y_btm, z_btm)).reshape(3,-1).T, columns = ["x", "y", "z"])
 
     # test
     ###############################################
@@ -1545,9 +1624,11 @@ def main(myTime, Solar_elev, azm_sun_row_coord,
     df_radiation["gb"]                = gb
     df_radiation["I0_beam_h"]         = I0_beam_h
     df_radiation["I0_dif_h"]          = I0_dif_h
+    df_radiation["H_row"]             = H_row
+    df_radiation["LD"]                = LD
 
-    df_I_g_h["I_dif_h"]  = df_I_g_h.swifter.apply(lambda row:cal_two_dimensional_integral_by_trapezoid(cfg.N1, cfg.N2, a1, b1, a2, b2, cfg.max_iter, cfg.acceptable_absolute_error, cal_diffuse_radiation_by_trapezoid, row["x"],row["y"],row["z"],cfg.H_row, cfg.W_row, cfg.W_path, list_edge_negative_y, list_edge_positive_y, I0_dif_h, cfg.O_av, cfg.scatter_coef, cfg.LD),axis=1)
-    df_I_g_h["I_beam_h"] = df_I_g_h.swifter.apply(lambda row:cal_beam_radiation(row["x"],row["y"],row["z"], azm_sun_row_coord, Solar_elev, cfg.H_row, cfg.W_row, cfg.W_path, list_edge_negative_y, list_edge_positive_y, cfg.LD, cfg.O_av, I0_beam_h, cfg.scatter_coef),axis=1)
+    df_I_g_h["I_dif_h"]  = df_I_g_h.swifter.apply(lambda row:cal_two_dimensional_integral_by_trapezoid(cfg.N1, cfg.N2, a1, b1, a2, b2, cfg.max_iter, cfg.acceptable_absolute_error, cal_diffuse_radiation_by_trapezoid, row["x"],row["y"],row["z"],H_row, cfg.W_row, cfg.W_path, list_edge_negative_y, list_edge_positive_y, I0_dif_h, cfg.O_av, cfg.scatter_coef, LD),axis=1)
+    df_I_g_h["I_beam_h"] = df_I_g_h.swifter.apply(lambda row:cal_beam_radiation(row["x"],row["y"],row["z"], azm_sun_row_coord, Solar_elev, H_row, cfg.W_row, cfg.W_path, list_edge_negative_y, list_edge_positive_y, LD, cfg.O_av, I0_beam_h, cfg.scatter_coef),axis=1)
     df_I_g_h["I_g_h"]    = df_I_g_h["I_beam_h"] + df_I_g_h["I_dif_h"]
     df_I_g_h.rename(columns = {"x":"x_g", "y":"y_g", "z":"z_g"}, inplace = True)
 
@@ -1569,8 +1650,8 @@ def main(myTime, Solar_elev, azm_sun_row_coord,
             df_radiation.swifter.apply(lambda row: cal_absorbed_radiation(
                 row["x"], row["y"], row["z"],
                 azm_sun_row_coord, Solar_elev,
-                cfg.H_row, cfg.W_row, cfg.W_path, list_edge_negative_y, list_edge_positive_y,
-                cfg.LD, row["dV"], row["dA"], cfg.O_av, I0_beam_h, I0_dif_h,
+                H_row, cfg.W_row, cfg.W_path, list_edge_negative_y, list_edge_positive_y,
+                LD, row["dV"], row["dA"], cfg.O_av, I0_beam_h, I0_dif_h,
                 cfg.scatter_coef, cfg.reflect_coef_ground, interp_I_g_h,
                 cfg.N1, cfg.N2, a1, a2, b1, b2, cfg.max_iter, cfg.acceptable_absolute_error
                 ), axis =1)
@@ -1639,7 +1720,7 @@ def preprocess_for_main(rfile):
     # パラメータの読み込み
     with open(rfile, "r") as file:
         d_config = yaml.safe_load(file)
-    print(d_config)
+    #print(d_config)
     cfg = SimpleNamespace(**d_config)
     # for key, val in dict_config.items():
     #     exec(key + "=val")
@@ -1648,9 +1729,23 @@ def preprocess_for_main(rfile):
     ###################################################
     # 環境データの読み込み
     #rpath = r"/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/env_sample_one_row.csv"
-    print(cfg.n_row)
     df_env = pd.read_csv(cfg.rpath_env, delimiter=',',comment='#',parse_dates=['Time'],index_col="Time")
 
+    ###################################################
+    # 個体群の構造データの読み込み
+    df_geo = pd.read_csv(cfg.rpath_geo, delimiter = ',', comment = '#', parse_dates= ["Time"], index_col = "Time")
+    
+    # df_envとくっつける。ただし、df_envの時刻優先。
+    time_start = df_env.index[0]
+    time_end = df_env.index[-1]
+
+    df_env = pd.concat([df_env, df_geo], axis = 1)
+    df_env = df_env.interpolate()
+    df_env = df_env.loc[(df_env.index >= time_start) & (df_env.index <= time_end)]
+    #print(df_env)
+
+    ###################################################
+    # 太陽の位置、畝の角度などの計算
     # Calculate solar elevation
     df_env["d_y"]=df_env.index.dayofyear.values
     # 30分おきだとステップが大きすぎて太陽高度の誤差がでるので，最後の項を追加．
@@ -1662,8 +1757,7 @@ def preprocess_for_main(rfile):
     df_env["mrd"]=cfg.meridian/180*np.pi
     df_result=df_env.swifter.apply(lambda row:cal_solar_elevation(row["ltt"],row["lng"],row["mrd"],row["d_y"],row["t_d"]),axis=1)
     df_result.columns=["Solar_elev","azm","tsr","tss","dl","lst"] # azmは，北を0として，時計回りに（東へ）回転．matplotlibでは左手座標にするために，最後にax.invert_yaxis()する．
-    df_env=pd.concat([df_env,df_result],axis=1)
-    #df_env.loc[df_env["Solar_elev"]<0,"Solar_elev"]=0 # これで夜間かどうかも判断する．
+    df_env=pd.concat([df_env,df_result],axis=1)  
 
     # 畝座標における太陽の角度（alpha_c, beta_c）を計算
     azimuth_row_rad = cfg.azimuth_row/180 * np.pi
@@ -1672,29 +1766,18 @@ def preprocess_for_main(rfile):
     #print(df_env["azm_sun_row_coord"])
     df_env[["alpha_c", "beta_c"]] = df_env[["azm_sun_row_coord", "Solar_elev"]].swifter.apply(lambda x: cal_solar_position_relative_to_row(*x),axis=1)
 
+
     ###################################################
     # パラメータリスト
     ###################################################   
-    #######################
-    # # ハウスに関するパラメータ
-    W_ground = (cfg.W_row * cfg.n_row) + (cfg.W_path * (cfg.n_row - 1)) + cfg.W_margin * 2
-    L_ground = cfg.L_row + cfg.L_margin * 2
-    A_ground_in_a = W_ground * L_ground /100
 
-    print("-------------------------------------------")
-    print("ハウス情報")
-    print("   畝本数 = {0:3.1f}, \n   畝幅 = {1:3.1f} m, \n   通路幅 = {2:3.1f} m, \n   作物高 = {3:3.1f} m, \n   畝長 = {4:3.1f} m, \n   外側の畝の両側の通路幅 = {5:3.1f} m, \n   畝の前後面の外側の通路幅 = {6:3.1f} m, \n".format(cfg.n_row, cfg.W_row, cfg.W_path, cfg.H_row, cfg.L_row, cfg.W_margin, cfg.L_margin))
-    print("   ハウス幅 = {0:3.1f} m, \n   ハウス奥行 = {1:3.1f} m \n   ハウス面積 = {2:3.1f} a".format(W_ground, L_ground, A_ground_in_a))
-    print("   azimuth_row = {0:3.1f}; 真北が，畝の真正面から半時計周りに{0:3.1f}°傾いている".format(cfg.azimuth_row))
-    print("-------------------------------------------")
-
-    # #######################
-    # # 作物群落に関するパラメータ
-    LAI = cfg.H_row * cfg.W_row * cfg.L_row * cfg.n_row * cfg.LD / (W_ground * L_ground) 
-    print("-------------------------------------------")
-    print("作物のパラメータ")
-    print("   葉面積密度LD = {0:3.1f} m^2 m^-3, \n   LAI = {1:3.1f} m^2 m^-2  \n".format(cfg.LD, LAI))
-    print("-------------------------------------------")
+    # # #######################
+    # # # 作物群落に関するパラメータ
+    # LAI = H_row * cfg.W_row * cfg.L_row * cfg.n_row * LD / (W_ground * L_ground) 
+    # print("-------------------------------------------")
+    # print("作物のパラメータ")
+    # print("   葉面積密度LD = {0:3.1f} m^2 m^-3, \n   LAI = {1:3.1f} m^2 m^-2  \n".format(LD, LAI))
+    # print("-------------------------------------------")
     
     # #######################
     # # 個葉光合成に関するパラメータ
@@ -1705,81 +1788,11 @@ def preprocess_for_main(rfile):
     print("-------------------------------------------")
     
     #######################
-    # 計算点に関するパラメータ
-    Nx_per_row = int(cfg.W_row / cfg.delta_x_row) # rowの中で，光を計算する点を作る際の，x方向への分割数
-    Ny_per_row = int(cfg.L_row / cfg.delta_y_row) # rowの中で，光を計算する点を作る際の，y方向への分割数
-    Nz_per_row = int(cfg.H_row / cfg.delta_z_row) # rowの中で，光を計算する点を作る際の，z方向への分割数
-
-    delta_x_row = cfg.W_row / Nx_per_row
-    delta_y_row = cfg.L_row / Ny_per_row
-    delta_z_row = cfg.H_row / Nz_per_row
-
-    Nx_per_btm = int(W_ground / 0.5) # 反射光計算のために，ハウスの底面に降り注ぐ光も計算する．そのときの，底の分割数．
-    Ny_per_btm = int(L_ground / 0.5)  # 反射光計算のために，通路に降り注ぐ光も計算する．そのときの，通路のy方向への分割数．
-
-    delta_x_btm = W_ground / Nx_per_btm
-    delta_y_btm = L_ground / Ny_per_btm
-
-    n_points = Nx_per_row * Ny_per_row * Nz_per_row + Nx_per_btm * Ny_per_btm 
-
-    print("-------------------------------------------")
-    print("数値計算に関する情報")
-    print("   畝の分割数 \n   x方向:{0}, \n   y方向:{1}, \n   z方向:{2}".format(Nx_per_row, Ny_per_row, Nz_per_row))
-    print("\n   畝の分割幅 \n   Δx = {0:5.3f} m, \n   Δy = {1:5.3f} m, \n   Δz = {2:5.3f} m".format(delta_x_row, delta_y_row, delta_z_row))
-    print("\n   反射光計算のための地面の分割数 \n   x方向:{0}, \n   y方向:{1}".format(Nx_per_btm, Ny_per_btm))
-    print("\n   反射光計算のための地面の分割幅 \n   Δx = {0:5.3f} m, \n   Δy = {1:5.3f} m".format(delta_x_btm, delta_y_btm))
-    print("\n 合計計算点数: {0} 点".format(n_points))
-
-    #######################
-    # 散乱光の数値計算に関するパラメータ
-    #delta = np.pi/1800 # 90 deg や 0 degなどでは，三角関数の計算値が不安定になる可能性があるので，そこを除外するためにdeltaを足し引きする．
-    # a1, b1, N1: diffuse radiationの計算における，betaの端点および分割数．
-    #N1 = 2 # まずN1分割から計算する．分割数を2倍ずつ増やして，増やす前後の計算値を比較して，収束判定する．
-    a1 = cfg.delta / 1.5
-    b1 = np.pi / 2 - cfg.delta
-
-    # a2, b2, N2: diffuse radiationの計算における，azmの端点および分割数
-    #N2 = 4 # まずN2分割から計算する．分割数を2倍ずつ増やして，増やす前後の計算値を比較して，収束判定する．
-    a2 = cfg.delta / 1.5
-    b2 = 2 * np.pi - cfg.delta
-
-    #max_iter = 10 # 散乱光の計算の最大反復数
-
-    print("\n散乱光・反射光の収束判定")
-    print("   最大繰り返し計算数:{0} 回, \n   許容誤差 = {1} umol m-2 s-1".format(cfg.max_iter, cfg.acceptable_absolute_error))
-    print("-------------------------------------------")
-
-
-    #######################
     # 見た目に関するパラメータ
     radius_sun_orbit = cfg.L_row / 2 *1.1 # 太陽軌道の見かけの半径
     
     # 太陽の位置を計算 (太陽軌道の半径をradius_sun_orbitとする)
     df_env = cal_solar_position(df_env, radius_sun_orbit, cfg.azimuth_row)
-    #######################
-
-    list_edge_negative_y, list_edge_positive_y =cal_row_edges(cfg.W_row, cfg.H_row, cfg.L_row, cfg.n_row, cfg.W_path, cfg.azimuth_row)
-    print("-------------------------------------------")
-    print("畝の端の座標:")
-    print("x(間口)は{0:3.1f} m から {1:3.1f} mまでの範囲．".format(list_edge_negative_y[0][0], list_edge_negative_y[-1][0]))
-    row_xedge_list = [(round(list_edge_negative_y[i][0], 2), round(list_edge_negative_y[i+1][0], 2)) for i in np.arange(0, len(list_edge_negative_y), step = 2)]
-    print("畝のx座標（左，右）")
-    print(row_xedge_list)
-    print()
-    print("y(奥行き方向)は{0:3.1f} m から {1:3.1f} mまでの範囲．".format(list_edge_negative_y[0][1], list_edge_positive_y[0][1]))
-
-    print("-------------------------------------------")
-
-
-    # 計算点 (df_radiation)
-    x_row, y_row, z_row, x_btm, y_btm, z_btm, dV_row, dA_row, dA_btm = create_grid_points_uniform(list_edge_negative_y, list_edge_positive_y, Nx_per_row, Ny_per_row, Nz_per_row, Nx_per_btm, Ny_per_btm, cfg.W_margin, cfg.L_margin)
-    df_radiation = pd.DataFrame(np.array([x_row, y_row, z_row, np.ones_like(x_row)*dV_row, np.ones_like(x_row)*dA_row]).reshape(5,-1).T, columns = ["x", "y", "z", "dV", "dA"])
-    
-    # 反射光の計算
-    # まずは地表面へ降り注ぐ日射の計算．
-    #x_btm, y_btm, z_btm = create_grid_points_bottom(list_edge_negative_y, list_edge_positive_y, Nx_per_btm, Ny_per_btm, W_margin, L_margin)
-    df_I_g_h = pd.DataFrame(np.array(np.broadcast_arrays(x_btm, y_btm, z_btm)).reshape(3,-1).T, columns = ["x", "y", "z"])
-
 
     #######################
     # シミュレーション用の光強度
@@ -1794,21 +1807,31 @@ def preprocess_for_main(rfile):
     # RHは0 - 100%なので、0 - 1.0に直す
     df_env["RH"] = df_env["RH"]/100
 
+    # dfs_results = df_env.swifter.apply(lambda row: main(row["Time"], row["Solar_elev"], row["azm_sun_row_coord"],
+    #                                                     row["d_y"], row["t_d"], row["ltt"], row["lng"], row["mrd"],
+    #                                                     row["azm"], row["alpha_c"], row["beta_c"],
+    #                                                     row["Ta"], row["RH"], row["Ca"], row["gb"], 
+    #                                                     row["I0_beam_h"], row["I0_dif_h"], df_radiation, df_I_g_h,
+    #                                                     a1, b1, a2, b2,
+    #                                                     list_edge_negative_y, list_edge_positive_y,
+    #                                                     x_row, y_row, z_row, x_btm, y_btm, z_btm, dV_row, dA_row, dA_btm,
+    #                                                     cfg), axis = 1)
     dfs_results = df_env.swifter.apply(lambda row: main(row["Time"], row["Solar_elev"], row["azm_sun_row_coord"],
                                                         row["d_y"], row["t_d"], row["ltt"], row["lng"], row["mrd"],
                                                         row["azm"], row["alpha_c"], row["beta_c"],
                                                         row["Ta"], row["RH"], row["Ca"], row["gb"], 
-                                                        row["I0_beam_h"], row["I0_dif_h"], df_radiation, df_I_g_h,
-                                                        a1, b1, a2, b2,
-                                                        list_edge_negative_y, list_edge_positive_y,
-                                                        x_row, y_row, z_row, x_btm, y_btm, z_btm, dV_row, dA_row, dA_btm,
+                                                        row["I0_beam_h"], row["I0_dif_h"], 
+                                                        row["H_row"], row["LD"],                                                        
                                                         cfg), axis = 1)
-    
+
+
 # %%
 if __name__ == '__main__':
-    rfile = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/畝90度/parameter_list.yml"
+    rfile = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/熊本_興農園_230615_230624_低段/parameter_list.yml"
+    start_all = time.time()
+    print("#################### 計算開始 ####################")
     preprocess_for_main(rfile)
-
-
+    end_all = time.time()
+    print("#################### 計算終了。かかった時間: {0:4.2f} s ####################".format(end_all - start_all))
 
 # %%
