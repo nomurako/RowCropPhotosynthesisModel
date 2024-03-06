@@ -336,7 +336,7 @@ def cal_outside_diffuse_radiation(S_global, day_of_year, Solar_elev, S_sc = 1370
     #I0_dif_h_out, I0_beam_h_out, 
     return pd.Series([I0_beam_h_out, I0_dif_h_out])
 
-def cal_inside_radiation(I0_beam_h_out, I0_dif_h_out, transmission_coef_cover, transmission_coef_structure, conversion_beam_to_dif):
+def cal_inside_radiation(I0_beam_h_out, I0_dif_h_out, transmission_coef_cover, transmission_coef_structure, beam_to_dif_conversion_ratio_cover):
     '''
     ハウス外の日射から、ハウス内の日射を計算する。
     
@@ -345,11 +345,11 @@ def cal_inside_radiation(I0_beam_h_out, I0_dif_h_out, transmission_coef_cover, t
         I0_dif_h_out                --- 野外の散乱PAR
         transmission_coef_cover     --- ハウス外張りのPAR透過率 (0 - 1)
         transmission_coef_structure --- ハウス骨材のPAR透過率 (0 - 1)
-        conversion_beam_to_dif      --- 直達光から散乱光への変換率 (0 - 1)
+        beam_to_dif_conversion_ratio_cover      --- 直達光から散乱光への変換率 (0 - 1)
     '''
     transmission_coef   = transmission_coef_cover * transmission_coef_structure
-    I0_beam_h_in        = I0_beam_h_out * (1 - conversion_beam_to_dif) * transmission_coef
-    I0_dif_h_in         = I0_dif_h_out * transmission_coef + I0_beam_h_out * conversion_beam_to_dif * transmission_coef
+    I0_beam_h_in        = I0_beam_h_out * (1 - beam_to_dif_conversion_ratio_cover) * transmission_coef
+    I0_dif_h_in         = I0_dif_h_out * transmission_coef + I0_beam_h_out * beam_to_dif_conversion_ratio_cover * transmission_coef
     return pd.Series([I0_beam_h_in, I0_dif_h_in])
 
 ##################################################################
@@ -1814,7 +1814,7 @@ def preprocess_for_main(rfile):
     # シミュレーション用の光強度
     if cfg.radiation_mode == "Rs_out":
         df_env[["I0_beam_h_out", "I0_dif_h_out"]]   = df_env.swifter.apply(lambda row: cal_outside_diffuse_radiation(row["Rs"], row["d_y"], row["Solar_elev"], S_sc = 1370), axis = 1)
-        df_env[["I0_beam_h", "I0_dif_h"]]           = df_env.swifter.apply(lambda row: cal_inside_radiation(row["I0_beam_h_out"], row["I0_dif_h_out"], cfg.transmission_coef_cover, cfg.transmission_coef_structure, cfg.conversion_beam_to_dif), axis = 1)
+        df_env[["I0_beam_h", "I0_dif_h"]]           = df_env.swifter.apply(lambda row: cal_inside_radiation(row["I0_beam_h_out"], row["I0_dif_h_out"], cfg.transmission_coef_cover, cfg.transmission_coef_structure, cfg.beam_to_dif_conversion_ratio_cover), axis = 1)
         #print(df_env[["I0_beam_h", "I0_dif_h"]])
     else:
         df_env["I0_beam_h"] = df_env["PARi"] * 0.8
@@ -1844,7 +1844,7 @@ def preprocess_for_main(rfile):
 
 # %%
 if __name__ == '__main__':
-    rfile = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/熊本_興農園_230615_230624_低段/parameter_list.yml"
+    rfile = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/熊本_興農園_ハウス内/熊本_興農園_230615_230624_低段_ハウス内/parameter_list.yml"
     start_all = time.time()
     print("#################### 計算開始 ####################")
     preprocess_for_main(rfile)
