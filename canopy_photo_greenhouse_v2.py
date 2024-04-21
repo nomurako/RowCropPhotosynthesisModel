@@ -9,6 +9,7 @@ v2  --- leaf angle distributionの修正を実施。sphericalではなくてelli
 
 
 import os
+import sys
 import time
 import numpy as np
 import pandas as pd
@@ -236,7 +237,7 @@ def cal_solar_elevation(ltt,lng,mrd,d_y,t_d):
     hour_angle=np.pi/12*(lst-12)
     aa =np.sin(ltt)*np.sin(solar_declination)
     bb = np.cos(ltt)*np.cos(solar_declination)
-    solar_elevation=np.arcsin(aa+bb*np.cos(2*np.pi*(lst-12)/24))
+    solar_elevation=np.arcsin(aa+bb*np.cos(hour_angle))
     # solar_elevation=np.arcsin(np.sin(solar_declination)*np.sin(ltt)+np.cos(solar_declination)*np.cos(ltt)*np.cos(hour_angle))
     if hour_angle<0:
         solar_azimuth=np.pi-np.arccos((np.sin(ltt)*np.sin(solar_elevation)-np.sin(solar_declination))/(np.cos(ltt)*np.cos(solar_elevation)))
@@ -291,8 +292,10 @@ def cal_solar_position_relative_to_row(azm_sun_row_coord, beta):
     
     なお，ここで，"畝座標"とは，北を基準としたazimuthではなく，畝の長辺方向を基準としたazimuth．
     Gijzen and Goudriaan (1989)では，azimuthを北をゼロとして，時計回りに計算している．
-    野村の太陽高度計算でも，北をゼロとして時計回りに回転させている．
+    野村の太陽高度計算でも，東西南北の座標を時計回りに回転させている．
     回転させた"結果"を，基準座標（畝座標）として用いている．
+    例えば、azm_sun_row_coord = 10°とすると、南北のラインは、畝の長辺方向を基準線として、時計周りに10°だけ傾いている。
+    逆に、南北のラインを基準に考えると、azm_sun_row_coord = 10°のとき、畝は半時計回りに10°だけ傾いている。
     '''
     #azm_sun_row_coord_south = azm_sun_row_coord + np.pi 
     beta_c = np.arcsin(np.cos(azm_sun_row_coord)*np.cos(beta))
@@ -1043,6 +1046,17 @@ def cal_absorbed_radiation(x_c, y_c, z_c, azm_sun_row_coord, beta, H_row, W_row,
         | I_abs_per_ground      --- その微小体積に含まれる葉 (sunlit葉 + shaded葉) の、
                                     土地面積あたりの葉の吸収光強度 (umol m-2 ground s-1)
     '''
+    # 太陽高度が0以下のときは、計算しない。
+    if beta <= 0:
+        I_abs_sun_per_LA        = 0
+        I_abs_sh_per_LA         = 0
+        I_abs_per_LA            = 0
+        I_abs_sun_per_ground    = 0
+        I_abs_sh_per_ground     = 0
+        I_abs_per_ground        = 0
+        f_sun                   = 0
+        return pd.Series([I_abs_sun_per_LA, I_abs_sh_per_LA, I_abs_per_LA, I_abs_sun_per_ground, I_abs_sh_per_ground, I_abs_per_ground, f_sun])
+    
     O_av = GF.cal_ellipsoidal_G_from_beta_rad(h_to_v_ratio, beta)
     # f_sunおよびf_shを計算する．
     f_sun = cal_beam_fraction(x_c, y_c, z_c, azm_sun_row_coord, beta, H_row, W_row, W_path, list_edge_negative_y, list_edge_positive_y, LD, O_av)
@@ -1185,11 +1199,15 @@ def cal_absorbed_reflected_radiation_by_trapezoid(x_c, y_c, z_c, H_row, W_row, W
     y_g = y_c + r_projected * np.cos(alpha)
     I_g_h = interp_I_g_h(np.array([x_g, y_g, 0]))[0]
     
+    # 地面に降り注ぐ光がゼロなら、反射光吸収も必然的にゼロ。
+    if I_g_h <= 0:
+        f = 0
+        return f
     # O_avを計算する。ただし、反射光計算では、鉛直からのなす角theta (rad)でこれまで議論してきたので、beta (rad)に直す。
     beta = np.pi/2 - theta
     O_av = GF.cal_ellipsoidal_G_from_beta_rad(h_to_v_ratio, beta)
 
-    reflect_coef_canopy = cal_reflect_coef_canopy(theta, O_av, scatter_coef)
+    reflect_coef_canopy = cal_reflect_coef_canopy(beta, O_av, scatter_coef)
     Pr = cal_path_length_reflected_radiation(x_c, y_c, z_c, W_row, W_path, list_edge_negative_y, list_edge_positive_y, x_g, y_g, 0)
     L_t = Pr * LD
     #f = O_av * (1 - scatter_coef) * reflect_coef_ground / np.pi * I_g_h * np.exp(-O_av * (1- scatter_coef)**0.5 * L_t) * np.sin(theta)
@@ -1589,8 +1607,8 @@ def main(myTime, Solar_elev, azm_sun_row_coord,
     delta_y_row = cfg.L_row / Ny_per_row
     delta_z_row = H_row / Nz_per_row
 
-    Nx_per_btm = int(W_ground / 0.5) # 反射光計算のために，ハウスの底面に降り注ぐ光も計算する．そのときの，底の分割数．
-    Ny_per_btm = int(L_ground / 0.5)  # 反射光計算のために，通路に降り注ぐ光も計算する．そのときの，通路のy方向への分割数．
+    Nx_per_btm = int(W_ground / cfg.delta_x_btm) # 反射光計算のために，ハウスの底面に降り注ぐ光も計算する．そのときの，底の分割数．
+    Ny_per_btm = int(L_ground / cfg.delta_y_btm)  # 反射光計算のために，通路に降り注ぐ光も計算する．そのときの，通路のy方向への分割数．
 
     delta_x_btm = W_ground / Nx_per_btm
     delta_y_btm = L_ground / Ny_per_btm
@@ -1699,7 +1717,7 @@ def main(myTime, Solar_elev, azm_sun_row_coord,
     df_I_g_h.rename(columns = {"x":"x_g", "y":"y_g", "z":"z_g"}, inplace = True)
 
     # interpolating functionをつくる．
-    I_g_h = df_I_g_h["I_dif_h"].values.reshape(x_btm.shape[0], y_btm.shape[1], z_btm.shape[2])
+    I_g_h = df_I_g_h["I_g_h"].values.reshape(x_btm.shape[0], y_btm.shape[1], z_btm.shape[2])
     interp_I_g_h = RegularGridInterpolator((x_btm.reshape(-1), y_btm.reshape(-1), z_btm.reshape(-1)), I_g_h, fill_value = 0, bounds_error= False)
     
     # 単純な光強度の計算
@@ -1741,14 +1759,23 @@ def main(myTime, Solar_elev, azm_sun_row_coord,
     #df_env2 = df_env.merge(df_params_TL)
 
     # sunlit葉、shaded葉のJを計算する。
-    df_radiation["J_sun"] = df_radiation.swifter.apply(lambda row: LP.cal_J_from_Qabs(Jmax, row["I_abs_sun_per_LA"], cfg.Phi_JQ, cfg.Beta_JQ, cfg.Theta_JQ), axis = 1)
-    df_radiation["J_sh"] = df_radiation.swifter.apply(lambda row: LP.cal_J_from_Qabs(Jmax, row["I_abs_sh_per_LA"], cfg.Phi_JQ, cfg.Beta_JQ, cfg.Theta_JQ), axis = 1)
+    vect_cal_J_from_Qabs = np.vectorize(LP.cal_J_from_Qabs, excluded = ["Jmax", "Phi_JQ", "Beta_JQ", "Theta_JQ"])
+    df_radiation["J_sun"] = vect_cal_J_from_Qabs(Jmax, df_radiation["I_abs_sun_per_LA"], cfg.Phi_JQ, cfg.Beta_JQ, cfg.Theta_JQ)
+    df_radiation["J_sh"] = vect_cal_J_from_Qabs(Jmax, df_radiation["I_abs_sh_per_LA"], cfg.Phi_JQ, cfg.Beta_JQ, cfg.Theta_JQ)
+    
+    # df_radiation["J_sun"] = df_radiation.swifter.apply(lambda row: LP.cal_J_from_Qabs(Jmax, row["I_abs_sun_per_LA"], cfg.Phi_JQ, cfg.Beta_JQ, cfg.Theta_JQ), axis = 1)
+    # df_radiation["J_sh"] = df_radiation.swifter.apply(lambda row: LP.cal_J_from_Qabs(Jmax, row["I_abs_sh_per_LA"], cfg.Phi_JQ, cfg.Beta_JQ, cfg.Theta_JQ), axis = 1)
 
-    results_sun = df_radiation.swifter.apply(lambda row: LP.cal_leaf_photo(Vcmax, row["J_sun"], Gamma_star, Kc, Ko, cfg.Oxy, Rd, cfg.m, cfg.b_dash, RH, gb, Ca), axis = 1)
-    df_results_sun = pd.DataFrame(results_sun.tolist(), columns = ["Ac_sun", "gs_c_sun", "Ci_c_sun", "Aj_sun", "gs_j_sun", "Ci_j_sun"])
+    vect_cal_leaf_photo = np.vectorize(LP.cal_leaf_photo, excluded = ["Vcmax", "Gamma_star", "Kc", "Ko", "Oxy", "Rd", "m", "b_dash", "RH", "gb", "Ca"])
+    results_sun = vect_cal_leaf_photo(Vcmax, df_radiation["J_sun"], Gamma_star, Kc, Ko, cfg.Oxy, Rd, cfg.m, cfg.b_dash, RH, gb, Ca)
+    df_results_sun = pd.DataFrame(results_sun, index = ["Ac_sun", "gs_c_sun", "Ci_c_sun", "Aj_sun", "gs_j_sun", "Ci_j_sun"]).T
+    #results_sun = df_radiation.swifter.apply(lambda row: LP.cal_leaf_photo(Vcmax, row["J_sun"], Gamma_star, Kc, Ko, cfg.Oxy, Rd, cfg.m, cfg.b_dash, RH, gb, Ca), axis = 1)
+    #df_results_sun = pd.DataFrame(results_sun.tolist(), columns = ["Ac_sun", "gs_c_sun", "Ci_c_sun", "Aj_sun", "gs_j_sun", "Ci_j_sun"])
 
-    results_sh = df_radiation.swifter.apply(lambda row: LP.cal_leaf_photo(Vcmax, row["J_sh"], Gamma_star, Kc, Ko, cfg.Oxy, Rd, cfg.m, cfg.b_dash, RH, gb, Ca), axis = 1)
-    df_results_sh = pd.DataFrame(results_sh.tolist(), columns = ["Ac_sh", "gs_c_sh", "Ci_c_sh", "Aj_sh", "gs_j_sh", "Ci_j_sh"])
+    results_sh = vect_cal_leaf_photo(Vcmax, df_radiation["J_sh"], Gamma_star, Kc, Ko, cfg.Oxy, Rd, cfg.m, cfg.b_dash, RH, gb, Ca)
+    df_results_sh = pd.DataFrame(results_sh, index = ["Ac_sh", "gs_c_sh", "Ci_c_sh", "Aj_sh", "gs_j_sh", "Ci_j_sh"]).T
+    #results_sh = df_radiation.swifter.apply(lambda row: LP.cal_leaf_photo(Vcmax, row["J_sh"], Gamma_star, Kc, Ko, cfg.Oxy, Rd, cfg.m, cfg.b_dash, RH, gb, Ca), axis = 1)
+    #df_results_sh = pd.DataFrame(results_sh.tolist(), columns = ["Ac_sh", "gs_c_sh", "Ci_c_sh", "Aj_sh", "gs_j_sh", "Ci_j_sh"])
 
     df_results = pd.concat([df_radiation, df_results_sun, df_results_sh], axis = 1)
 
@@ -1768,9 +1795,9 @@ def main(myTime, Solar_elev, azm_sun_row_coord,
 
     # 保存
     wdir_child = os.path.join(cfg.wdir, "output")
-    if not os.path.exists(wdir_child):
-        os.makedirs(wdir_child)
     wfile_name  = "" + myTime.strftime("%y%m%d_%H%M_out") + ".feather"
+    #myTime2 = pd.to_datetime(str(myTime)) # np.vectorize(main)としたとき 
+    #wfile_name  = "" + myTime2.strftime("%y%m%d_%H%M_out") + ".feather"
     wfile_path = os.path.join(wdir_child, wfile_name)
     feather.write_feather(df_results, wfile_path)
     end = time.time()
@@ -1797,6 +1824,25 @@ def preprocess_for_main(rfile):
     #rpath = r"/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/env_sample_one_row.csv"
     df_env = pd.read_csv(cfg.rpath_env, delimiter=',',comment='#',parse_dates=['Time'],index_col="Time")
 
+    # 既に計算済みの場合、計算をスキップする。
+    wdir_child = os.path.join(cfg.wdir, "output")
+    if os.path.exists(wdir_child):
+        # 古いcsvファイルがoutputフォルダに残っている場合は消去する。
+        oldcsvpath = os.path.join(wdir_child, "dirnal.csv")
+        if os.path.exists(oldcsvpath):
+            os.remove(oldcsvpath)
+        wfile_name_list = os.listdir(wdir_child)
+        wfile_name_list = [i for i in wfile_name_list if 'feather' in i]
+        wtime_list = pd.to_datetime(wfile_name_list, format = "%y%m%d_%H%M_out.feather")
+        df_env = df_env.loc[~df_env.index.isin(wtime_list)]
+        if df_env.empty:
+            print("df_env is empty! This is probably because all the output feather files have alreadhy existed.")
+            print("Delete the output directory to avoid this error." )
+            sys.exit("Program stopped.")
+
+    else: #outputフォルダがない場合は作成する。
+        os.makedirs(wdir_child)
+
     ###################################################
     # 個体群の構造データの読み込み
     df_geo = pd.read_csv(cfg.rpath_geo, delimiter = ',', comment = '#', parse_dates= ["Time"], index_col = "Time")
@@ -1821,11 +1867,12 @@ def preprocess_for_main(rfile):
     df_env["ltt"]=cfg.latitude/180*np.pi
     df_env["lng"]=cfg.longitude/180*np.pi
     df_env["mrd"]=cfg.meridian/180*np.pi
-    df_result=df_env.swifter.apply(lambda row:cal_solar_elevation(row["ltt"],row["lng"],row["mrd"],row["d_y"],row["t_d"]),axis=1)
-    df_result.columns=["Solar_elev","azm","tsr","tss","dl","lst"] # azmは，北を0として，時計回りに（東へ）回転．matplotlibでは左手座標にするために，最後にax.invert_yaxis()する．
+    df_result=df_env[["ltt","lng","mrd","d_y","t_d"]].swifter.apply(lambda row:cal_solar_elevation(*row), axis=1)
+    df_result.columns=["Solar_elev","azm","tsr","tss","dl","lst"] # azmは，北を0として，時計回りに（東へ）回転するときの角度を示す．matplotlibでは左手座標にするために，最後にax.invert_yaxis()する．
     df_env=pd.concat([df_env,df_result],axis=1)  
 
-    # 畝座標における太陽の角度（alpha_c, beta_c）を計算
+    # 畝座標における太陽の角度（alpha_c, beta_c）を計算。azmith_row_radは、北向きを基準にしたときに、畝が半時計回り（西方向）に何度傾いているかを示す。
+    # azm_sun_row_coordは、畝座標系における太陽の方位角を示す。0°は畝の長辺方向。
     azimuth_row_rad = cfg.azimuth_row/180 * np.pi
     df_env["azm_sun_row_coord"] = df_env["azm"] + azimuth_row_rad
     df_env["azm_sun_row_coord"] = df_env["azm_sun_row_coord"].where(df_env["azm_sun_row_coord"]<=2*np.pi, df_env["azm_sun_row_coord"] - 2*np.pi)
@@ -1863,12 +1910,15 @@ def preprocess_for_main(rfile):
     #######################
     # シミュレーション用の光強度
     if cfg.radiation_mode == "Rs_out":
+        # ハウス外の日射 (W m-2)を使用するとき；気象庁データを利用するとき
         df_env[["I0_beam_h_out", "I0_dif_h_out"]]   = df_env.swifter.apply(lambda row: cal_outside_diffuse_radiation(row["Rs"], row["d_y"], row["Solar_elev"], S_sc = 1370), axis = 1)
         df_env[["I0_beam_h", "I0_dif_h"]]           = df_env.swifter.apply(lambda row: cal_inside_radiation(row["I0_beam_h_out"], row["I0_dif_h_out"], cfg.transmission_coef_cover, cfg.transmission_coef_structure, cfg.beam_to_dif_conversion_ratio_cover), axis = 1)
         #print(df_env[["I0_beam_h", "I0_dif_h"]])
-    else:
-        df_env["I0_beam_h"] = df_env["PARi"] * 0.8
-        df_env["I0_dif_h"]  = df_env["PARi"] * 0.2
+    elif cfg.radiation_mode == "PARi":
+        # チャンバー等の実測PARを使用するとき。ただし、すでにbeamとdiffuseとの分離を終えているものとする。
+        # df_env["I0_beam_h"] = df_env["PARi"] * 0.8
+        # df_env["I0_dif_h"]  = df_env["PARi"] * 0.2
+        print("PARiモード。(I0_beam_h, I0_dif_h) を基に計算を行う。")
     
     #######################
     # RHは0 - 100%なので、0 - 1.0に直す
@@ -1883,19 +1933,37 @@ def preprocess_for_main(rfile):
     #                                                     list_edge_negative_y, list_edge_positive_y,
     #                                                     x_row, y_row, z_row, x_btm, y_btm, z_btm, dV_row, dA_row, dA_btm,
     #                                                     cfg), axis = 1)
-    dfs_results = df_env.swifter.apply(lambda row: main(row["Time"], row["Solar_elev"], row["azm_sun_row_coord"],
-                                                        row["d_y"], row["t_d"], row["ltt"], row["lng"], row["mrd"],
-                                                        row["azm"], row["alpha_c"], row["beta_c"],
-                                                        row["Ta"], row["RH"], row["Ca"], row["gb"], 
-                                                        row["I0_beam_h"], row["I0_dif_h"], 
-                                                        row["H_row"], row["LD"],                                                        
-                                                        cfg), axis = 1)
+    
+    # vect_main = np.vectorize(main, excluded=["cfg"])
+    # dfs_results = vect_main(df_env["Time"], df_env["Solar_elev"], df_env["azm_sun_row_coord"],
+    #                         df_env["d_y"], df_env["t_d"], df_env["ltt"], df_env["lng"], df_env["mrd"],
+    #                         df_env["azm"], df_env["alpha_c"], df_env["beta_c"],
+    #                         df_env["Ta"], df_env["RH"], df_env["Ca"], df_env["gb"],
+    #                         df_env["I0_beam_h"], df_env["I0_dif_h"],
+    #                         df_env["H_row"], df_env["LD"],
+    #                         cfg = cfg)
+
+    # dfs_results = df_env.swifter.force_parallel(enable=True).apply(lambda row: main(row["Time"], row["Solar_elev"], row["azm_sun_row_coord"],
+    #                                                     row["d_y"], row["t_d"], row["ltt"], row["lng"], row["mrd"],
+    #                                                     row["azm"], row["alpha_c"], row["beta_c"],
+    #                                                     row["Ta"], row["RH"], row["Ca"], row["gb"], 
+    #                                                     row["I0_beam_h"], row["I0_dif_h"], 
+    #                                                     row["H_row"], row["LD"],                                                        
+    #                                                     cfg), axis = 1)
+
+    dfs_results = df_env[["Time", "Solar_elev", "azm_sun_row_coord",
+                          "d_y", "t_d", "ltt", "lng", "mrd",
+                          "azm", "alpha_c", "beta_c",
+                          "Ta", "RH", "Ca", "gb",
+                          "I0_beam_h", "I0_dif_h", 
+                          "H_row", "LD"]].swifter.force_parallel(enable=True).apply(lambda row: main(*row, cfg =cfg), axis = 1)
 
 
 # %%
 if __name__ == '__main__':
     # yamlファイル。yamlファイル内のpathも変更すること！！！！
-    rfile = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/ellipsoidal_trial/熊本_興農園_230615_230624_低段_ハウス内/parameter_list_v2.yml"
+    rfile = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/v3構築用/parameter_list_v3.yml"
+    #rfile  = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/大学内トマト個体群でのモデル検証/高知大学2021_教育用ハウス/parameter_list_v2.yml"
     start_all = time.time()
     print("#################### 計算開始 ####################")
     preprocess_for_main(rfile)
