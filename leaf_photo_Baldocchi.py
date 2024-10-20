@@ -13,41 +13,6 @@ plt.rcParams['font.size']=12
 plt.rcParams['font.family'] = 'IPAexGothic'
 
 # %%
-#constants and functions related to FvCB model
-Vcmax_25 = 90
-C_Vcmax  = 17.7
-DH_Vcmax = 43694
-
-Jmax_25  = 200
-C_Jmax   = 25.3
-DHa_Jmax = 62295
-DHd_Jmax = 123553
-DS_Jmax  = 400
-
-Rd_25 = 1.5
-C_Rd  = 18.7
-DH_Rd = 46390
-
-Kc_25=404.9
-C_Kc=38.05
-DH_Kc=79.43*10**3
-
-Ko_25=278.4
-C_Ko=20.30
-DH_Ko=36.38*10**3
-
-Gamma_star_25=42.75
-C_Gamma_star=19.02
-DH_Gamma_star=37.83*10**3
-
-m = 10
-b_dash = 0.005
-
-Phi_JQ   = 0.85
-Beta_JQ  = 0.5
-Alpha_L  = 0.85
-Theta_JQ = 0.7
-
 #constant
 R_gas=8.3144598 # J K-1 mol-1
 M_H2O=18.01528 # g mol-1
@@ -110,12 +75,15 @@ def cal_J(Jmax,q,Phi_JQ,Beta_JQ,Theta_JQ, Alpha_L):
     q2=q * Phi_JQ * Beta_JQ * Alpha_L
     return (q2+Jmax-((q2+Jmax)**2-4*q2*Jmax*Theta_JQ)**0.5)/(2*Theta_JQ)
 
-def cal_J_from_Qabs(Jmax,q,Phi_JQ,Beta_JQ,Theta_JQ):
+def cal_J_from_Qabs(Jmax,q_abs,Phi_JQ,Beta_JQ,Theta_JQ):
     """    
     吸収光強度からJを計算する。
+    群落光合成モデルから個葉光合成速度を計算するときに使う。
+    引数q_absに吸収率はすでに加味されているので、ここではAlpha_Lをかけない
+
     Keyword arguments:
         Jmax        --- Jmax in umol m-2 s-1
-        q           --- incident PAR in umol m-2 s-1
+        q_abs       --- 吸収PAR in umol m-2_leaf s-1
         Phi_JQ      --- J-Q曲線の初期勾配 (0.85)
         Beta_JQ     --- PSIIへの分配率 (0.5)
         Theta_JQ    --- J-Q曲線の凸度 (0.7)
@@ -123,7 +91,7 @@ def cal_J_from_Qabs(Jmax,q,Phi_JQ,Beta_JQ,Theta_JQ):
     Returns:
         electron transport rate
     """       
-    q2=q * Phi_JQ * Beta_JQ * Alpha_L
+    q2=q_abs * Phi_JQ * Beta_JQ # q_absに吸収率はすでに加味されているので、Alpha_Lをかけない。
     return (q2+Jmax-((q2+Jmax)**2-4*q2*Jmax*Theta_JQ)**0.5)/(2*Theta_JQ)
 
 def cal_params_at_TL(TL, R_gas,
@@ -157,8 +125,8 @@ def cal_leaf_photo (Vcmax, J, Gamma_star, Kc, Ko, Oxy, Rd, m, b_dash, rh, gb, Ca
     gb, gsはCO2に対する値．
 
     入力
-        m           --- Ballモデルの傾き (ただし，水蒸気に対する気孔コンダクタンスモデルの傾きを1.6で割ったもの)
-        b_dash      --- Ballモデルの切片 (ただし，水蒸気に対する気孔コンダクタンスモデルの切片を1.6で割ったもの)
+        m           --- Ballモデルの傾き。水蒸気に対する値。 この関数内で1.6で割って、CO2に対する値に直す。
+        b_dash      --- Ballモデルの切片。水蒸気に対する値。 この関数内で1.6で割って、CO2に対する値に直す。
         gb          --- CO2に対する葉面境界層コンダクタンス (mol m-2 s-1)
         rh          --- 相対湿度 (-)．パーセントではない．
         Oxy         --- 大気中の酸素濃度．210 mmol mol-1．
@@ -176,15 +144,24 @@ def cal_leaf_photo (Vcmax, J, Gamma_star, Kc, Ko, Oxy, Rd, m, b_dash, rh, gb, Ca
         d = Gamma_star
         e = 4
         b = 8*Gamma_star
+
+    出力
+        Ac          --- Rubisco律速のときの純光合成速度
+        gs_c        --- Rubisco律速のときの、CO2に対する気孔コンダクタンス
+        Ci_c        --- Rubisco律速のときの葉内間隙中のCO2濃度
+        Aj          --- RuBP律速のときの純光合成速度
+        gs_j        --- RuBP律速のときの、CO2に対する気孔コンダクタンス
+        Ci_j        --- RuBP律速のときの葉内間隙中のCO2濃度
+        
     '''
     # Rubisco律速のときの光合成速度Acの計算
     
-    def cal_cubic(a, d, e, b): 
+    def cal_cubic(a, d, e, b, m_co2, b_dash_co2): 
 
-        alpha = 1 + b_dash / gb - m * rh
-        beta  = Ca * (gb * m * rh - 2*b_dash - gb)
-        gamma = Ca ** 2 * b_dash * gb
-        theta = gb * m * rh - b_dash
+        alpha = 1 + b_dash_co2 / gb - m_co2 * rh
+        beta  = Ca * (gb * m_co2 * rh - 2*b_dash_co2 - gb)
+        gamma = Ca ** 2 * b_dash_co2 * gb
+        theta = gb * m_co2 * rh - b_dash_co2
 
         aa    = 1
         bb    = (e * beta + b * theta - a * alpha + e * alpha * Rd) / (e * alpha)
@@ -212,8 +189,8 @@ def cal_leaf_photo (Vcmax, J, Gamma_star, Kc, Ko, Oxy, Rd, m, b_dash, rh, gb, Ca
 
         return x1, x2, x3
 
-    def cal_quadratic(a, d, e, b):
-        gl = b_dash * gb / (b_dash + gb)
+    def cal_quadratic(a, d, e, b, b_dash_co2):
+        gl = b_dash_co2 * gb / (b_dash_co2 + gb)
         
         aa = 1
         bb = - (gl / e) * (e * Ca + b - e * Rd / gl + a / gl)
@@ -223,8 +200,8 @@ def cal_leaf_photo (Vcmax, J, Gamma_star, Kc, Ko, Oxy, Rd, m, b_dash, rh, gb, Ca
         x2 = (-bb - (bb**2 - 4 * aa * cc)**0.5) / (2 * aa)
         return x1, x2
 
-    def cal_gs_from_A(A, m, b_dash, rh, Ca, gb):
-        gs = m * rh / (Ca - A/gb) * A + b_dash
+    def cal_gs_from_A(A, m_co2, b_dash_co2, rh, Ca, gb):
+        gs = m_co2 * rh / (Ca - A/gb) * A + b_dash_co2
         return gs
     
     def cal_Ci_from_gs(gs, gb, A, Ca):
@@ -243,23 +220,27 @@ def cal_leaf_photo (Vcmax, J, Gamma_star, Kc, Ko, Oxy, Rd, m, b_dash, rh, gb, Ca
                     if Ci.real >0:
                         return True
         return False
+    ####################################################################################
+    # m, bを水蒸気に対する値からCO2に対する値に変換する。
+    m_co2 = m/1.6
+    b_dash_co2 = b_dash/1.6
 
     # Rubisco律速
-    Ac_list = cal_cubic(Vcmax, Gamma_star, 1, Kc * (1 + Oxy / Ko))
+    Ac_list = cal_cubic(Vcmax, Gamma_star, 1, Kc * (1 + Oxy / Ko), m_co2, b_dash_co2)
     gs_c_list = []
     Ci_c_list = []
     for dummy in Ac_list:
-        gs_c = cal_gs_from_A(dummy, m, b_dash, rh, Ca, gb)
+        gs_c = cal_gs_from_A(dummy, m_co2, b_dash_co2, rh, Ca, gb)
         Ci_c = cal_Ci_from_gs(gs_c, gb, dummy, Ca)
         gs_c_list.append(gs_c)
         Ci_c_list.append(Ci_c)
 
     # RuBP再生律速
-    Aj_list = cal_cubic(J, Gamma_star, 4, 8*Gamma_star)
+    Aj_list = cal_cubic(J, Gamma_star, 4, 8*Gamma_star, m_co2, b_dash_co2)
     gs_j_list = []
     Ci_j_list = []
     for dummy in Aj_list:
-        gs_j = cal_gs_from_A(dummy, m, b_dash, rh, Ca, gb)
+        gs_j = cal_gs_from_A(dummy, m_co2, b_dash_co2, rh, Ca, gb)
         Ci_j = cal_Ci_from_gs(gs_j, gb, dummy, Ca)
         gs_j_list.append(gs_j)
         Ci_j_list.append(Ci_j)
@@ -294,29 +275,30 @@ def cal_leaf_photo (Vcmax, J, Gamma_star, Kc, Ko, Oxy, Rd, m, b_dash, rh, gb, Ca
     # Ac>=0の解がなければ，Ac < 0, gs = 定数 = b_dashの解しか存在しない．
     if Ac == -10000:
         #print("/n2次方程式_Ac")
-        Ac_list_quadratic   = cal_quadratic(Vcmax, Gamma_star, 1, Kc * (1 + Oxy / Ko))        
+        Ac_list_quadratic   = cal_quadratic(Vcmax, Gamma_star, 1, Kc * (1 + Oxy / Ko), b_dash_co2)        
         #print(Ac_list_quadratic)
         for dummy in Ac_list_quadratic:
-            Ci_dummy = cal_Ci_from_gs(b_dash, gb, dummy, Ca)
+            Ci_dummy = cal_Ci_from_gs(b_dash_co2, gb, dummy, Ca)
             if (Ci_dummy > 0) :
                 Ac = dummy.real
-                gs_c = b_dash.real
+                gs_c = b_dash_co2.real
                 Ci_c = Ci_dummy.real
                 print("[OK]  ", Ac, gs_c, Ci_c)
-            else:
-                print("[NOT OK]  ", dummy, b_dash, Ci_dummy)
-                print("Ac_cubic", Ac_list)
+            # else: # Ac_list_quadraticのうち、片方が[OK]であれば問題ないので、ここでもし[NOT OK]が出たとしても問題ない
+            #     print("[NOT OK]  ", dummy, b_dash_co2, Ci_dummy)
+            #     print("このとき、Ac = {0:4.2f}, gs_c = {1:4.2f}, Ci_c = {2:4.2f}".format(Ac, gs_c, Ci_c))
+            #     print("Vcmax ={:3.2f}, J ={:3.2f}, Gamma_star ={:3.2f}, Kc = {:3.2f}, Ko ={:3.2f}, Oxy = {:3.2f}, Rd = {:3.2f}, m = {:3.2f}, b_dash = {:3.2f}, rh = {:3.2f}, gb = {:3.2f}, Ca = {:3.2f}".format(Vcmax, J, Gamma_star, Kc, Ko, Oxy, Rd, m, b_dash, rh, gb, Ca))
 
 
     if Aj == -10000:
         #print("/n2次方程式_Aj")
-        Aj_list_quadratic   = cal_quadratic(J, Gamma_star, 4, 8*Gamma_star)
+        Aj_list_quadratic   = cal_quadratic(J, Gamma_star, 4, 8*Gamma_star, b_dash_co2)
         
         for dummy in Aj_list_quadratic:
-            Ci_dummy = cal_Ci_from_gs(b_dash, gb, dummy, Ca)
+            Ci_dummy = cal_Ci_from_gs(b_dash_co2, gb, dummy, Ca)
             if (Ci_dummy > 0) :
                 Aj = dummy.real
-                gs_j = b_dash.real
+                gs_j = b_dash_co2.real
                 Ci_j = Ci_dummy.real
 
     return Ac, gs_c, Ci_c, Aj, gs_j, Ci_j                
@@ -324,8 +306,43 @@ def cal_leaf_photo (Vcmax, J, Gamma_star, Kc, Ko, Oxy, Rd, m, b_dash, rh, gb, Ca
 
 #%%# test
 if __name__ == "__main__":
+    #constants and functions related to FvCB model
+    Vcmax_25 = 90
+    C_Vcmax  = 17.7
+    DH_Vcmax = 43694
+
+    Jmax_25  = 200
+    C_Jmax   = 25.3
+    DHa_Jmax = 62295
+    DHd_Jmax = 123553
+    DS_Jmax  = 400
+
+    Rd_25 = 1.5
+    C_Rd  = 18.7
+    DH_Rd = 46390
+
+    Kc_25=404.9
+    C_Kc=38.05
+    DH_Kc=79.43*10**3
+
+    Ko_25=278.4
+    C_Ko=20.30
+    DH_Ko=36.38*10**3
+
+    Gamma_star_25=42.75
+    C_Gamma_star=19.02
+    DH_Gamma_star=37.83*10**3
+
+    m = 10
+    b_dash = 0.005
+
+    Phi_JQ   = 0.85
+    Beta_JQ  = 0.5
+    Alpha_L  = 0.85
+    Theta_JQ = 0.7
+
     Ca_list = np.linspace(550, 555, 2)
-    Q_list  = np.linspace(200, 250, 2)
+    Q_list  = np.linspace(0, 2200)
     Ta_list = np.linspace(27, 30, 2)
     RH_list = np.linspace(0.05,1.0, 10)
     gb_list = np.linspace(0.01,10, 10)
@@ -370,11 +387,11 @@ if __name__ == "__main__":
     Ca = Ca_list[1]
     Q = Q_list[1]
     Ta = Ta_list[1]
-    gb = gb_list[1]
-    RH = RH_list[1]
+    gb = gb_list[-1]
+    RH = RH_list[-1]
     dummy = df_results.loc[(df_results["RH"] == RH) & (df_results["Ca"] == Ca) 
                         & (df_results["TL"] == Ta) & (df_results["gb"] == gb)]
-    print(Ca, Q, Ta, gb, RH)
+    print("Ca ={}, Q = {}, Ta = {}, gb = {}, RH = {}".format(Ca, Q, Ta, gb, RH))
     plt.plot(dummy["Q"], dummy["Ac"])
     plt.plot(dummy["Q"], dummy["Aj"])
 

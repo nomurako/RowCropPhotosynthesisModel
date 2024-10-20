@@ -1271,6 +1271,26 @@ def cal_two_dimensional_integral_by_trapezoid(N1, N2, a1, b1, a2, b2, max_iter, 
             N1              --- xの分割数（前回のiterationで使用した値）
             N2              --- yの分割数（前回のiterationで使用した値）
         '''
+        # input_var_names = list(func.__code__.co_varnames[: func.__code__.co_argcount])
+        # excluded_names = input_var_names.copy()
+        # input_name = excluded_names.pop(-2) # excluded_namesから要素を消す & それをinput_nameとする。
+
+        # vect_func = np.vectorize(func, excluded=excluded_names)
+        # js = np.arange(1, N2 + 1)
+        # input_arr = a2+(b2-a2)/(2*N2)*(2*js-1)
+        
+        # input_for_func_added_1 = list(input_for_func)
+        # input_for_func_added_1.append(input_arr)
+        # input_for_func_added_1.append(a1)
+        # input_dict = dict(map(lambda i,j : (i,j) , input_var_names, input_for_func_added_1))
+        # fx_at_a1 = vect_func(**input_dict).sum()
+
+        # input_for_func_added_2 = list(input_for_func)
+        # input_for_func_added_2.append(input_arr)
+        # input_for_func_added_2.append(b1)
+        # input_dict = dict(map(lambda i,j : (i,j) , input_var_names, input_for_func_added_2))
+        # fx_at_b1 = vect_func(**input_dict).sum()
+
         fx_at_a1 = 0
         fx_at_b1 = 0
         for j in range(1, N2 + 1):
@@ -1282,12 +1302,35 @@ def cal_two_dimensional_integral_by_trapezoid(N1, N2, a1, b1, a2, b2, max_iter, 
         for k in range(1, N1 + 1):
             fy_at_a2 += func(*input_for_func, a2, a1+(b1-a1)/(2*N1)*(2*k-1))
             fy_at_b2 += func(*input_for_func, b2, a1+(b1-a1)/(2*N1)*(2*k-1))
-        
+
+
+        # input_name_01 = input_var_names[-2]
+        # input_name_02 = input_var_names[-1]
+        # excluded_names = input_var_names[:-2]
+        # vect_func = np.vectorize(func, excluded=excluded_names)
+
+        # ks = np.arange(1, N1 + 1)
+        # js = np.arange(1, N2 + 1)
+
+        # input_arr_01 = a2+(b2-a2)/(2*N2)*(2*js-1)
+        # input_arr_02 = a1+(b1-a1)/(2*N1)*(2*ks-1)
+        # input_arrs_combination = np.meshgrid(input_arr_01, input_arr_02)
+        # input_arr_01_v2 = input_arrs_combination[0].reshape(-1)
+        # input_arr_02_v2 = input_arrs_combination[1].reshape(-1)
+
+        # input_for_func_added_1 = list(input_for_func)
+        # input_for_func_added_1.append(input_arr_01_v2)
+        # input_for_func_added_1.append(input_arr_02_v2)
+        # input_dict = dict(map(lambda i,j : (i,j) , input_var_names, input_for_func_added_1))
+        # f_inside = vect_func(**input_dict).sum()
+
         f_inside = 0
         for k in range(1, N1 + 1):
             for j in range(1, N2 + 1):
                 f_inside += func(*input_for_func, a2+(b2-a2)/(2*N2)*(2*j-1), a1+(b1-a1)/(2*N1)*(2*k-1))
-        
+
+        ##########
+        # こっから！
         fy_rest = 0
         for k in range(1, N1 + 1):
             for j in range(1, N2):
@@ -1961,11 +2004,19 @@ def preprocess_for_main(rfile):
 
 # %%
 if __name__ == '__main__':
-    # yamlファイル。yamlファイル内のpathも変更すること！！！！
-    rfile = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/v3構築用/parameter_list_v3.yml"
-    #rfile  = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/大学内トマト個体群でのモデル検証/高知大学2021_教育用ハウス/parameter_list_v2.yml"
+    # # yamlファイル。yamlファイル内のpathも変更すること！！！！
+    # parent_dir = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/論文執筆_ハイワイヤー/一様群落/"
+    # file_name = "parameter_list_v2.yml"
+    # dir_list = ["1.8m_400ppm_clear",
+    #             "1.8m_400ppm_diffuse"
+    #             ]
+    # for dir_name in dir_list:
+    #     rfile = os.path.join(parent_dir, dir_name, file_name)
+        #rfile = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/論文執筆_ハイワイヤー/whole_season/1.8m_400ppm_diffuse/parameter_list_v2.yml"
+    rfile  = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/大学内トマト個体群でのモデル検証/高知大学2021_教育用ハウス_0625_0706/Chamber2/parameter_list_v2.yml"
     start_all = time.time()
     print("#################### 計算開始 ####################")
+    print(rfile)
     preprocess_for_main(rfile)
     end_all = time.time()
     print("#################### 計算終了。かかった時間: {0:4.2f} s ####################".format(end_all - start_all))
