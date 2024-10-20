@@ -25,8 +25,8 @@ A snapshot of the cross-sectional distribution of A<sub>L</sub>.
 - Climate data are stored in "./sample/climate_data.csv".
 - The time-series data of the canopy height (Hr) and leaf area index (LAI) are stored in "./sample/canopy_geometry.csv". This data should be further processed using "canopy_geometry.py" to create "canopy_geometry_processed.py".
 - After the preparation of the above three files (i.e., parameter_list_v2.yml, canopy_geometry_processed.csv, climate_data.csv), you can run "canopy_photo_greenhouse_v2.py", and you will find output files in "./sample/output" (output directory will be automatically created). It will take several minutes, depending on your CPU.
+- If you have already created the "./sample/output" directory, you cannot run "canopy_photo_greenhouse_v2.py" unless you remove that directory.
 - You can visualize the output file (in .feather extension) using "results_visualizer.py".
-- If you have the "./sample/output" directory, you cannot run "canopy_photo_greenhouse_v2.py". Please remove that directory if you want to run the code again.
  
 ## Install
 Unfortunately, we have not organized the necessary files and codes in a user-friendly way yet. Please just clone the repository, install the necessary packages written in "requirement.txt", and run. 
