@@ -22,4 +22,4 @@ A mathematical model for calculating the canopy photosynthetic rate of a row-pla
 
 ## Author
 
-[tcnksm](https://github.com/tcnksm)
+[Koichi Nomura](https://github.com/nomurako)
