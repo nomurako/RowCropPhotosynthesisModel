@@ -481,7 +481,7 @@ def read_feather(rdir, read_csv = True, output_fig = False, show_fig = True, to_
 
     rpath = os.path.join(rdir, "parameter_list_v2.yml")
 
-    with open(rpath, "r") as file:
+    with open(rpath, "r", encoding='utf8') as file:
         d_config = yaml.safe_load(file)
     #print(d_config)
     cfg = SimpleNamespace(**d_config)
@@ -724,7 +724,7 @@ if __name__ == "__main__":
 
     rpath = os.path.join(rdir, "parameter_list_v2.yml")
 
-    with open(rpath, "r") as file:
+    with open(rpath, "r", encoding='utf8') as file:
         d_config = yaml.safe_load(file)
     #print(d_config)
     cfg = SimpleNamespace(**d_config)

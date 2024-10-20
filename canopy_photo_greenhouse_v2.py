@@ -1524,7 +1524,7 @@ def preprocess_for_main(rfile):
     # ここからメインプログラム
     ###################################################
     # パラメータの読み込み
-    with open(rfile, "r") as file:
+    with open(rfile, "r", encoding='utf8') as file:
         d_config = yaml.safe_load(file)
     #print(d_config)
     cfg = SimpleNamespace(**d_config)
