@@ -15,7 +15,7 @@ This animation was created by connecting output images.
 A snapshot of the cross-sectional distribution of A<sub>L</sub>.
 ![image](https://github.com/user-attachments/assets/059166e4-1a8b-4e96-a2e2-cd455f748cc3)
 ## Requirement
-- The calculation is CPU-intensive because the model calculates A<sub>L</sub> at all the defined grid points in the 3D canopy (e.g., 100 x 100 x 100 = 10^6 points). We recommend a good CPU (e.g., Intel Core i9) to run the calculation.
+- The calculation is CPU-intensive because the model calculates A<sub>L</sub> at all the defined grid points in the 3D canopy (e.g., 100 x 100 x 100 = 10<sup>6</sup>  points). Therefore, we recommend using a good CPU (e.g., Intel Core i9) to run the calculation.
 - Please install the packages in "requirements.txt".
 - The codes were written in a Linux environment. You might encounter unexpected errors if you run the codes in Windows/Mac environments.
 
