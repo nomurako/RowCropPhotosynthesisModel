@@ -473,7 +473,7 @@ def visualize_greenhouse(df, cfg, elev=30, azim=-85, roll=0, index = -1, alpha =
     return ax
 # %%
 if __name__ == "__main__":
-    rdir = r"/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/大学内トマト個体群でのモデル検証/高知大学2021_教育用ハウス_0625_0706_一様/"
+    rdir = r"./sample/"
     file_name = "canopy_geometry.csv"
     file_name_config = "parameter_list_v2.yml"
     wfile_name = file_name[:-4]+"_processed.csv"

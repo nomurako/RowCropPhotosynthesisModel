@@ -1,0 +1,124 @@
+---
+###################################################
+# パラメータリスト
+# v2    --- ellipsoidal leaf angle distributionに対応。葉の平均葉角からO_avを求める。
+
+###################################################
+#######################
+# データのpath
+# 環境データ
+rpath_env : ./sample/climate_data.csv
+
+# 群落の構造データ
+rpath_geo : ./sample/canopy_geometry_processed.csv
+
+# 出力先
+wdir      : ./sample/
+
+#######################
+# 計算モード
+radiation_mode : Rs_out # 日射の計算モード。"Rs_out"のとき、外日射 (W m-2)からPARiを計算。"PARi"のとき、PARiの実測値を使用して計算する。
+fixed_canopy_structure : True # 群落構造は固定かどうか。Falseであれば、群落構造は固定値。
+
+#######################
+# ハウスの形・位置に関するパラメータ
+W_row : 1.0   # 畝幅 (m)。固定値とする。これとは別に、あとで、"葉群の幅"パラメータを作りたい。
+#H_row : 2.5  # 作物の高さ (m)
+L_row : 20.0  # 畝の長さ (m)
+n_row : 4    # 畝の本数 (本)
+W_path : 1.0  # 通路幅 (m)
+W_margin : 0.5 # 両側の畝の外側の通路幅 (m)．
+L_margin : 2.0 # 畝の前面・背面の外側の通路幅 (m)
+azimuth_row : 0 # 北向きを基準としたときに、畝が半時計回り（西に向かって）に何度傾いているか
+latitude    : 33.55115 # ハウスの緯度(小数表示), 
+longitude   : 133.67669 # ハウスの経度(小数表示)
+meridian    : 135 # 標準時子午線の経度(小数表示)
+
+#######################
+# ハウス資材に関するパラメータ。
+# 外日射からハウス内のPARを計算するときに使用。
+# radiation_mode : Rs_outのとき
+transmission_coef_cover        : 0.8579 # ハウス外張りのPAR透過率
+transmission_coef_structure    : 0.75 # ハウス骨材のPAR透過率
+beam_to_dif_conversion_ratio_cover : 0.09 # ハウス外張りによって、beamの何% (小数表示)がdiffuseにconvertされるか。
+reflect_coef_ground : 0.4 # 土壌の反射係数 (-)
+
+#######################
+# 作物群落に関するパラメータ
+#LD : 2.5 # 畝内の葉の密度．m^2 m^-3
+scatter_coef : 0.15 # 葉の散乱係数
+#O_av : 0.5 # leaf angle distribution (球面分布のため定数)
+mean_leaf_angle : 31.3 # mean_leaf_angle --- 平均葉角（°）。平均葉角は、水平葉でゼロとする。57.3°は球面分布を表す。
+
+#######################
+# 個葉光合成に関するパラメータ
+Vcmax_25 : 77.28240171858909 #90
+C_Vcmax  : 24.787918897311595 #17.7
+DH_Vcmax : 61350.08070454535 #43694
+
+Jmax_25  : 140.8084653069715 #200
+C_Jmax   : 40.83798971509676 #25.3
+DHa_Jmax : 100719.91109126006  #62295
+DHd_Jmax : 151014.45623731182 #123553
+DS_Jmax  : 494.3302398428961 #400
+
+Rd_25 :  1.1592 #1.271 #1.5 # Vcmaxの1.5%
+C_Rd  :  24.787918897311595 #15.98 #18.7 # Vcmaxの1.5%
+DH_Rd :  61350.08070454535 #38459 #46390 # Vcmaxの1.5%
+
+Kc_25 : 404.9
+C_Kc  : 38.05
+DH_Kc : 79430
+
+Ko_25 : 278.4
+C_Ko  : 20.30
+DH_Ko : 36380
+
+Gamma_star_25 : 42.75
+C_Gamma_star  : 19.02
+DH_Gamma_star : 37830
+
+m : 7.584 # 10　# Ballモデルの傾き。H2Oに対するもの。
+b_dash : 0.098 # 0.005　# Ballモデルの切片。H2Oに対するもの。
+
+Phi_JQ   : 0.85
+Beta_JQ  : 0.5
+Alpha_L  : 0.85
+Theta_JQ : 0.7
+
+#######################
+# その他定数
+R_gas : 8.3144598 # J K-1 mol-1
+M_H2O : 18.01528 # g mol-1
+M_CO2 : 44.01 # g mol-1
+Pa    : 101325 # Pa
+Oxy   : 210 # mmol mol-1; Oxygen_concentration
+
+#######################
+# 計算点に関するパラメータ (刻み幅)
+# ただし、分割数が整数にならない場合、 Nx_per_row = int(W_row / delta_x_row)
+# などとなる。
+delta_x_row : 0.2 # m
+delta_y_row : 5.0 # m
+delta_z_row : 0.2 # m
+
+# 反射光計算用の地面の刻み幅
+delta_x_btm : 0.5 # m
+delta_y_btm : 5.0 # m
+
+#######################
+# 散乱光の数値計算に関するパラメータ
+delta : 0.0003 # 90 deg や 0 degなどでは，三角関数の計算値が不安定になる可能性があるので，そこを除外するためにdeltaを足し引きする．
+
+# a1, b1, N1: diffuse radiationの計算における，betaの端点および分割数．
+N1 : 2 # まずN1分割から計算する．分割数を2倍ずつ増やして，増やす前後の計算値を比較して，収束判定する．
+# a1 = delta / 1.5
+# b1 = np.pi / 2 - delta
+
+# a2, b2, N2: diffuse radiationの計算における，azmの端点および分割数
+N2 : 4 # まずN2分割から計算する．分割数を2倍ずつ増やして，増やす前後の計算値を比較して，収束判定する．
+# a2 = delta / 1.5
+# b2 = 2 * np.pi - delta
+
+max_iter : 10 # 散乱光の計算の最大反復数
+acceptable_absolute_error : 10 # umol m-2 s-1

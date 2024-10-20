@@ -718,9 +718,9 @@ if __name__ == "__main__":
 
     ###################################################
     # パラメータの読み込み
-    rdir = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/論文執筆_ハイワイヤー/1.8m_400ppm_clear/"
+    rdir = "./sample/"
     # ファイルに出力するかどうか
-    output = True
+    output = False
 
     rpath = os.path.join(rdir, "parameter_list_v2.yml")
 
@@ -935,20 +935,17 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
-    df_results.head()
-    # %%
+    # # x   = 0.0
+    # # dx  = 1.8
+    # # y   = -18 - 0.6
+    # # dy  = 1.2
+
     # x   = 0.0
     # dx  = 1.8
-    # y   = -18 - 0.6
-    # dy  = 1.2
+    # y   = -25
+    # dy  = 50
 
-    x   = 0.0
-    dx  = 1.8
-    y   = -25
-    dy  = 50
-
-    df_diurnal_in_area = cal_and_visualize_canopy_photo_in_area(dfs_list, df_CG, cfg, x, dx, y, dy, delta_x_row, delta_y_row, list_edge_negative_y, list_edge_positive_y)
-    A_day_in_area =df_diurnal_in_area["A_per_ground_in_area"].sum() * 3600 /10**6
-    # %%
-    df_results.head()
+    # df_diurnal_in_area = cal_and_visualize_canopy_photo_in_area(dfs_list, df_CG, cfg, x, dx, y, dy, delta_x_row, delta_y_row, list_edge_negative_y, list_edge_positive_y)
+    # A_day_in_area =df_diurnal_in_area["A_per_ground_in_area"].sum() * 3600 /10**6
+    # df_results.head()
 # %%

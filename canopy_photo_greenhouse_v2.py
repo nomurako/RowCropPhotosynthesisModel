@@ -1648,15 +1648,7 @@ def preprocess_for_main(rfile):
 # %%
 if __name__ == '__main__':
     # # yamlファイル。yamlファイル内のpathも変更すること！！！！
-    # parent_dir = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/論文執筆_ハイワイヤー/一様群落/"
-    # file_name = "parameter_list_v2.yml"
-    # dir_list = ["1.8m_400ppm_clear",
-    #             "1.8m_400ppm_diffuse"
-    #             ]
-    # for dir_name in dir_list:
-    #     rfile = os.path.join(parent_dir, dir_name, file_name)
-        #rfile = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/論文執筆_ハイワイヤー/whole_season/1.8m_400ppm_diffuse/parameter_list_v2.yml"
-    rfile  = "/home/koichi/pCloudDrive/01_Research/231007_畝を考慮に入れた群落光合成モデル/test_simulation/大学内トマト個体群でのモデル検証/高知大学2021_教育用ハウス_0625_0706/Chamber2/parameter_list_v2.yml"
+    rfile  = "./sample/parameter_list_v2.yml"
     start_all = time.time()
     print("#################### 計算開始 ####################")
     print(rfile)
