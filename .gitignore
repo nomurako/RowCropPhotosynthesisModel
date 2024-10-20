@@ -15,3 +15,5 @@ src/*.egg-info
 lib
 lib64
 .gitignore
+**/__pycache__/**
+requirements.in
