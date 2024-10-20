@@ -16,8 +16,9 @@ A snapshot of the cross-sectional distribution of A<sub>L</sub>.
 ![image](https://github.com/user-attachments/assets/059166e4-1a8b-4e96-a2e2-cd455f748cc3)
 ## Requirement
 - The calculation is CPU-intensive because the model calculates A<sub>L</sub> at all the defined grid points in the 3D canopy (e.g., 100 x 100 x 100 = 10<sup>6</sup>  points). Therefore, we recommend using a good CPU (e.g., Intel Core i9) to run the calculation.
-- Please install the packages in "requirements.txt".
+- Install the necessary packages in "requirements.txt".
 - The codes were written in a Linux environment. You might encounter unexpected errors if you run the codes in Windows/Mac environments.
+- We used Python version 3.10.12.
 
 ## Usage
 - Parameters are stored in "./sample/parameter_list_v2.yml".
@@ -30,7 +31,7 @@ A snapshot of the cross-sectional distribution of A<sub>L</sub>.
 Unfortunately, we have not organized the necessary files and codes in a user-friendly way yet. Please just clone the repository, install the necessary packages written in "requirement.txt", and run. 
 
 ## Licence
-[MIT](https://github.com/tcnksm/tool/blob/master/LICENCE)
+[MIT](https://mit-license.org/)
 
 ## Author
 [Koichi Nomura](https://github.com/nomurako)
