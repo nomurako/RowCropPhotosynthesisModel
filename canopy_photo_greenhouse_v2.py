@@ -147,30 +147,6 @@ def create_grid_points_uniform(list_edge_negative_y, list_edge_positive_y, Nx_pe
     dV_row = dx_row * dy_row * dz_row # m3
     dA_row = dx_row * dy_row # m2
 
-
-    # 通路の底（反射光計算用）の座標．
-    # 畝の周りのマージン（L_margin, W_margin）を考慮に入れている． 
-    # dy_path = ((list_edge_positive_y[0][1] + L_margin) - (list_edge_negative_y[0][1] - L_margin)) / Ny_per_path_btm
-    # y_array_path_btm = np.linspace(list_edge_negative_y[0][1] - L_margin, list_edge_positive_y[0][1] + L_margin, Ny_per_path_btm, endpoint= False) + dy_path / 2
-    # z_array_path_btm = np.array([0])
-
-    # x_array_path_btm = np.array([])
-    # dx_path = (list_edge_negative_y[2][0] - list_edge_negative_y[1][0]) / Nx_per_path_btm
-    # for i in range(1,ix-1, 2):
-    #     x_array_dummy = np.linspace(list_edge_negative_y[i][0], list_edge_negative_y[i+1][0], Nx_per_path_btm, endpoint= False) + dx_path / 2
-    #     x_array_path_btm = np.append(x_array_path_btm, x_array_dummy)
-    
-    # # 畝の外側の通路
-    # x_array_negative_margin = np.linspace(list_edge_negative_y[0][0] - W_margin, list_edge_negative_y[0][0], Nx_per_path_btm, endpoint= False) + dx_path / 2
-    # x_array_positive_margin = np.linspace(list_edge_negative_y[-1][0], list_edge_negative_y[-1][0] + W_margin, Nx_per_path_btm, endpoint= False) + dx_path / 2
-    # x_array_path_btm = np.append(x_array_path_btm, x_array_negative_margin)
-    # x_array_path_btm = np.append(x_array_path_btm, x_array_positive_margin)
-    # x_array_path_btm = np.sort(x_array_path_btm)
-    # x_path_btm, y_path_btm, z_path_btm = np.meshgrid(x_array_path_btm, y_array_path_btm, z_array_path_btm)
-
-    # # 通路の底の点（反射光計算用）の専有面積
-    # dA_path = dx_path * dy_path
-
     #####################################
     # 底（反射光計算用）の座標．
     dy_btm = ((list_edge_positive_y[0][1] + L_margin) - (list_edge_negative_y[0][1] - L_margin)) / Ny_per_btm
@@ -671,49 +647,6 @@ def cal_path_length(x_c_original, y_c_original, z_c_original, azm_sun_row_coord,
                     elif (0 <= azm_sun_row_coord/np.pi * 180) & (azm_sun_row_coord/np.pi * 180 <= 90):
                         if y_at_xedge > y_edge_positive: # ぎり外側．
                             Pr = 0
-
-            # if (x_c < x_edge_negative):
-            #     if (y_c < y_edge_negative): # 1
-            #         #print("pattern 1")
-            #         if (x_at_H_row < x_edge_negative) | (y_at_H_row < y_edge_negative):
-            #             Pr = 0
-                        
-            #     elif (y_edge_negative <= y_c) & (y_c <= y_edge_positive): # 8
-            #         #print("pattern 8")            
-            #         if (x_at_H_row < x_edge_negative):
-            #             Pr = 0
-
-            #     elif (y_edge_positive < y_c): # 7
-            #         #print("pattern 7")
-            #         if (x_at_H_row < x_edge_negative) | (y_edge_positive < y_at_H_row):
-            #             Pr = 0
-
-            # elif (x_edge_positive < x_c):
-            #     if (y_c < y_edge_negative): # 3
-            #         #print("pattern 3")
-            #         if (x_edge_positive < x_at_H_row) | (y_at_H_row < y_edge_negative):
-            #             Pr = 0
-
-            #     elif (y_edge_negative <= y_c) & (y_c <= y_edge_positive): # 4
-            #         #print("pattern 4")
-            #         if (x_edge_positive < x_at_H_row):
-            #             Pr = 0
-
-            #     elif (y_edge_positive < y_c): # 5
-            #         #print("pattern 5")
-            #         if (x_edge_positive < x_at_H_row) | (y_edge_positive < y_at_H_row):
-            #             Pr = 0
-
-            # elif (x_edge_negative <= x_c) & (x_c <= x_edge_positive):
-            #     if (y_c < y_edge_negative): # 2
-            #         # print("pattern 2")
-            #         if (y_at_H_row < y_edge_negative):
-            #             Pr = 0
-
-            #     elif (y_edge_positive < y_c): # 6
-            #         #print("pattern 6")
-            #         if (y_edge_positive < y_at_H_row):
-            #             Pr = 0
 
         # 上記以外の場合
         if Pr == -1:
@@ -1271,25 +1204,6 @@ def cal_two_dimensional_integral_by_trapezoid(N1, N2, a1, b1, a2, b2, max_iter, 
             N1              --- xの分割数（前回のiterationで使用した値）
             N2              --- yの分割数（前回のiterationで使用した値）
         '''
-        # input_var_names = list(func.__code__.co_varnames[: func.__code__.co_argcount])
-        # excluded_names = input_var_names.copy()
-        # input_name = excluded_names.pop(-2) # excluded_namesから要素を消す & それをinput_nameとする。
-
-        # vect_func = np.vectorize(func, excluded=excluded_names)
-        # js = np.arange(1, N2 + 1)
-        # input_arr = a2+(b2-a2)/(2*N2)*(2*js-1)
-        
-        # input_for_func_added_1 = list(input_for_func)
-        # input_for_func_added_1.append(input_arr)
-        # input_for_func_added_1.append(a1)
-        # input_dict = dict(map(lambda i,j : (i,j) , input_var_names, input_for_func_added_1))
-        # fx_at_a1 = vect_func(**input_dict).sum()
-
-        # input_for_func_added_2 = list(input_for_func)
-        # input_for_func_added_2.append(input_arr)
-        # input_for_func_added_2.append(b1)
-        # input_dict = dict(map(lambda i,j : (i,j) , input_var_names, input_for_func_added_2))
-        # fx_at_b1 = vect_func(**input_dict).sum()
 
         fx_at_a1 = 0
         fx_at_b1 = 0
@@ -1303,26 +1217,6 @@ def cal_two_dimensional_integral_by_trapezoid(N1, N2, a1, b1, a2, b2, max_iter, 
             fy_at_a2 += func(*input_for_func, a2, a1+(b1-a1)/(2*N1)*(2*k-1))
             fy_at_b2 += func(*input_for_func, b2, a1+(b1-a1)/(2*N1)*(2*k-1))
 
-
-        # input_name_01 = input_var_names[-2]
-        # input_name_02 = input_var_names[-1]
-        # excluded_names = input_var_names[:-2]
-        # vect_func = np.vectorize(func, excluded=excluded_names)
-
-        # ks = np.arange(1, N1 + 1)
-        # js = np.arange(1, N2 + 1)
-
-        # input_arr_01 = a2+(b2-a2)/(2*N2)*(2*js-1)
-        # input_arr_02 = a1+(b1-a1)/(2*N1)*(2*ks-1)
-        # input_arrs_combination = np.meshgrid(input_arr_01, input_arr_02)
-        # input_arr_01_v2 = input_arrs_combination[0].reshape(-1)
-        # input_arr_02_v2 = input_arrs_combination[1].reshape(-1)
-
-        # input_for_func_added_1 = list(input_for_func)
-        # input_for_func_added_1.append(input_arr_01_v2)
-        # input_for_func_added_1.append(input_arr_02_v2)
-        # input_dict = dict(map(lambda i,j : (i,j) , input_var_names, input_for_func_added_1))
-        # f_inside = vect_func(**input_dict).sum()
 
         f_inside = 0
         for k in range(1, N1 + 1):
@@ -1386,230 +1280,6 @@ def cal_two_dimensional_integral_by_trapezoid(N1, N2, a1, b1, a2, b2, max_iter, 
         if i == max_iter - 1:
             print("収束しませんでした．")
     return integral_new
-
-###################################################
-# Depreciated!!!!!!!!!
-###################################################
-def cal_azimuth_and_elevation_between_a_point_and_center(x_c, y_c, z_c, x_p, y_p, z_p):
-    '''
-    DEPRECIATED！！！というか使っていない。
-    任意の点 (中心点)と, もう一つ別の点 (edgeを想定) との
-    なす角を計算する．
-    すなわち, 畝座標における
-    azimuth (azimuth_c), 
-    solar elevation (beta_c)
-    を計算する (Gizjen & Goudriaan, 1989 Fig.1を参照).
-    
-    なお，ここで，"畝座標"とは，北を基準としたazimuthではなく，畝の長辺方向を基準としたazimuth．
-    Gijzen and Goudriaan (1989)では，azimuthを北をゼロとして，時計回りに計算している．
-    野村の太陽高度計算でも，北をゼロとして時計回りに回転させている．
-    回転させた"結果"を，基準座標（畝座標）として用いている．
-    
-    入力
-        x_c, y_c, z_c  --- 中心点
-        x_p, y_p, z_p  --- edgeの点
-    
-    '''
-    # x_cを基準として，edgeの座標を計算
-    x = x_p - x_c
-    y = y_p - y_c
-    z = z_p - z_c
-    
-    # Gizjen and Goudriaan (1989)のFig.1の座標に変換
-    if z == 0: # arctanが計算できないが，z ->0の極限を取ると，azimuth_cもbeta_cも90°になる．
-        azimuth_c = np.pi/2
-        beta_c = np.pi/2
-    else:
-        azimuth_c     = np.arctan(x/z)
-        beta_c        = np.arctan(y/ (z/np.cos(azimuth_c)))
-    
-    return azimuth_c, beta_c
-
-
-def cal_diffuse_radiation(x_c, y_c, z_c, H_row, W_row, W_path, list_edge_negative_y, list_edge_positive_y, I0_dif_h, O_av, scatter_coef, LD, ndiv_azm, ndiv_beta):
-    '''
-    DEPRECIATED!!!
-    地点(x_c, y_c, z_c)におけるdiffuse radiationを計算する．
-    天空をndiv_azm * ndiv_betaだけ分割して計算する．
-    入力
-        ndiv_azm  --- azimuth方向の分割数
-        ndiv_beta --- beta方向の分割数
-    '''
-
-    delta = np.pi/180 # 90 deg や 0 degなどでは，三角関数の計算値が不安定になる可能性があるので，そこを除外するためにdeltaを足し引きする．
-    azm_list = np.linspace(0 + delta, 2*np.pi -delta, ndiv_azm) 
-    beta_list = np.linspace(0 + delta, np.pi/2 - delta, ndiv_beta)
-    d_azm = (np.pi -delta - (-np.pi + delta)) / ndiv_azm # azmのステップ幅
-    d_beta = (np.pi/2 - delta) / ndiv_beta # betaのステップ幅．
-
-    # 微小
-    d_A = np.sin(beta_list) * np.cos(beta_list) * d_beta * d_azm
-
-    # 台形公式で積分する．
-    F_list = []
-    for azm in azm_list:
-        f_list = []
-        for beta in beta_list:
-            Pr = cal_path_length(x_c,y_c,z_c, azm, beta, H_row, W_row, W_path, list_edge_negative_y, list_edge_positive_y)
-            L_t = Pr * LD
-            f = np.exp(-O_av * (1 - scatter_coef)**0.5 * L_t) * np.sin(beta) *np.cos(beta)
-            f_list.append(f)
-
-        # Fを計算．
-        f_list = np.array(f_list)
-        F = d_beta * ((f_list[0] + f_list[-1]) / 2 + np.sum(f_list[1:-1]))
-        F_list.append(F)
-    
-    # I_dif_hを計算．
-    I_dif_h = (I0_dif_h/np.pi) * d_azm * ((F_list[0] + F_list[-1]) / 2 + np.sum(F_list[1:-1]))
-    
-    return I_dif_h
-
-def cal_diffuse_radiation_with_convergence(x_c, y_c, z_c, H_row, W_row, W_path, list_edge_negative_y, list_edge_positive_y, I0_dif_h, O_av, scatter_coef, LD, ndiv_azm, ndiv_beta, acceptable_absolute_error, max_iter = 10):
-    '''
-    DEPRECIATED!!!
-    Acceptable errorより小さくなる または max_iterに達するまで，diffuse radiationの計算刻みを小さくして計算していく．    
-    '''
-    ndiv_azm_before = ndiv_azm
-    ndiv_beta_before = ndiv_beta
-    I_dif_h_before = 10000
-    error = 10000
-    for i in range(max_iter):
-        I_dif_h_after = cal_diffuse_radiation(x_c, y_c, z_c, H_row, W_row, W_path, list_edge_negative_y, list_edge_positive_y, I0_dif_h, O_av, scatter_coef, LD, ndiv_azm_before, ndiv_beta_before)
-        print(I_dif_h_before, I_dif_h_after)
-        absolute_error = abs(integral - integral_new)
-        #relative_error = abs(absolute_error / I_dif_h_before)
-        
-        # 収束判定
-        if (absolute_error < acceptable_absolute_error / 100):
-            print("{0}回目のiterationで収束して，I_dif_h = {1:3.1f}が計算されました．ndiv_azm = {2:3.0f}, ndiv_".format(i, I_dif_h_before, ndiv_azm_before, ndiv_beta_before))
-            break        
-
-        # 値の更新
-        I_dif_h_before = I_dif_h_after
-        ndiv_azm_before  = 2 * ndiv_azm_before
-        ndiv_beta_before = 2 * ndiv_beta_before
-
-        if i == max_iter - 1:
-            print("収束しませんでした．")
-    return I_dif_h_before
-
-
-def cal_reflected_radiation(x_c, y_c, z_c, H_row, W_row, W_path, list_edge_negative_y, list_edge_positive_y, O_av, scatter_coef, reflect_coef_ground, LD, df_I_g_h):
-    '''
-    DEPRECIATED!!!てか計算失敗(r → 0のときdAが適切に小さくできない問題; つまり、式が厳密でない)
-    地面からの反射光を計算する．
-    
-    入力
-        df_I_g_h            --- 地面上の点(x_g, y_g, z_g)へ到達した光強度I_g_hのdataframe. (x_g, y_g, z_g)が占める面積dAも列に含む．
-        reflect_coef_ground --- 地面の反射係数
-    '''
-    
-    def cal_reflected_radiation_from_a_point(x_c, y_c, z_c, H_row, W_row, W_path, list_edge_negative_y, list_edge_positive_y, O_av, scatter_coef, reflect_coef_ground, LD, x_g, y_g, z_g, dA, I_g_h):
-        '''
-        点(x_g, y_g, z_g)から点(x_c, y_c, z_c)への反射光強度を計算する．
-        
-        "これまでの理解をまとめる No.12, 13, 14"
-        "地面からの反射光の計算 No.1, No.2 
-        を参照のこと！
-
-        まず，点(x_g, y_g, z_g)が，ハウスの畝-通路群のどこに存在するのかを確認する．
-        奥行き方向(y_g)が畝の前面・背面よりもさらに外側に存在する場合，
-        (x_g, y_g, z_g)を(x_g_dash, y_g_dash, z_g_dash)に移動させた点からpath lengthを計算する．
-        
-        '''
-        x_edge_negative = list_edge_negative_y[0][0]
-        x_edge_positive = list_edge_negative_y[-1][0]
-        y_edge_negative = list_edge_negative_y[0][1]
-        y_edge_positive = list_edge_positive_y[0][1]
-
-        ################################
-        # Prの計算
-        # 点(x_g, y_g, z_g)から点(x_c, y_c, z_c)までの距離r および角度beta (x_c, y_c, z_cの"高度")
-        r = np.sqrt ((x_c - x_g)**2 + (y_c - y_g)**2 + (z_c - z_g)**2)
-        beta = np.arcsin((z_c - z_g) / r)        
-
-        # 計算用の角度 (これまでの理解をまとめる No.13参照)
-        if (z_c - z_g == 0):
-            alpha_c = np.pi/2
-        else:
-            alpha_c = np.arctan(abs((x_c - x_g) / (z_c - z_g)))
-        beta_c  = np.arctan(abs((y_c - y_g) / np.sqrt((x_c - x_g)**2 + (z_c - z_g)**2)))
-
-        # 奥行き方向(y_g)が畝の前面・背面よりもさらに外側に存在する場合，
-        # (x_g, y_g, z_g)を(x_g_dash, y_g_dash, z_g_dash)に移動させた点からpath lengthを計算する．
-        # 点(x_g, y_g, z_g)が畝の前面・背面をはみ出してないかどうか
-        if (y_edge_negative <= y_g) & (y_g <= y_edge_positive): # はみ出していない
-            x_g_dash = x_g
-            y_g_dash = y_g
-            z_g_dash = z_g
-        else: # はみ出している
-            if y_g < y_edge_negative: # y_gが奥行き側にはみ出している
-                y_g_dash = y_edge_negative
-            elif y_edge_positive < y_g: # y_gが手前側にはみ出している
-                y_g_dash = y_edge_positive
-            vector_g_to_c = np.array([(x_c - x_g), (y_c - y_g), (z_c - z_g)])
-            x_g_dash = (vector_g_to_c[0] / vector_g_to_c[1]) * (y_g_dash - y_g) + x_g
-            z_g_dash = (vector_g_to_c[2] / vector_g_to_c[1]) * (y_g_dash - y_g) + z_g        
-  
-        # 点(x_g_dash, y_g_dash, z_g_dash)と点(x_c, y_c, z_c)との位置関係の確認．
-
-        # 点(x_g_dash, y_g_dash, z_g_dash)が畝の中にあるか，外にあるか．
-        # interval_xisinが偶数ならば，(x_g, y_g, z_g)は畝の中に存在する．
-        xyz_isin_row, x_isin_row, y_isin_row, z_isin_row, interval_xisin = check_xyz_isin_row(x_g_dash, y_g_dash, z_g_dash, list_edge_negative_y, list_edge_positive_y)
-        
-        # x_c, y_c, z_cが畝内なのか，それとも通路なのか
-        if not xyz_isin_row: # 通路内．x_outside_row_from_leftは"通路"の左端からの距離であることに注意!!
-            x = 0
-            if interval_xisin == -1: # x_g_dashは両端の畝よりもなお外側に存在する．
-                x_outside_row_from_right  = x_edge_negative - x_g_dash # 左端の畝から点[x_g_dash, y_g_dash, z_g_dash]までの距離
-                x_outside_row_from_left = x_g_dash - x_edge_positive # 右端の畝から点[x_g_dash, y_g_dash, z_g_dash]までの距離
-            else: 
-                x_outside_row_from_left  =  x_g_dash - list_edge_negative_y[interval_xisin][0] # 点[x_g_dash, y_g_dash, z_g_dash]が属する通路の左端からの距離
-                x_outside_row_from_right = W_path - x_outside_row_from_left # 点[x_g_dash, y_g_dash, z_g_dash]が属する通路の右端からの距離
-            
-            # x_g_dash < x_cであれば，x_g_dashはx_cよりも左側にある．このときのpath_lengthの計算にはx_outside_row_from_rightを使う．
-            # これは通常のpath lengthの計算のとき (x_c, y_c, z_cとx_ps, y_ps, z_psとの比較時)とは逆であることに注意！！
-            if x_g_dash <= x_c:
-                x_o = x_outside_row_from_right
-            else:
-                x_o = x_outside_row_from_left
-
-        if xyz_isin_row: # 畝内
-            x_o = 0
-            x_in_row_from_left =  x_g_dash - list_edge_negative_y[interval_xisin][0] # 点[x_g_dash, y_g_dash, z_g_dash]が属する畝の左端からの距離
-            x_in_row_from_right = W_row - x_in_row_from_left # 点[x_g_dash, y_g_dash, z_g_dash]が属する畝の右端からの距離
-
-            # x_g_dash < x_cであれば，x_g_dashはx_cよりも左側にある．このときのpath_lengthの計算にはx_in_row_from_leftを使う．
-            # これは通常のpath lengthの計算のとき (x_c, y_c, z_cとx_ps, y_ps, z_psとの比較時)とは逆であることに注意！！
-            if x_g_dash <= x_c:
-                x = x_in_row_from_left
-            else:
-                x = x_in_row_from_right
-        
-        dx = abs(x_c - x_g_dash)
-        x_residual = (dx + x - x_o) % (W_path + W_row)
-        N_unit = (dx + x - x_o) // (W_path + W_row)
-        Pr_dash = (N_unit * W_row - x + x_residual) / np.sin(alpha_c)
- 
-        Pr = Pr_dash / np.cos(beta_c)
-        L_t = Pr * LD
-        if round(r, 3) < round(Pr, 3):
-            print()
-            print("反射光の計算で何かがおかしい！")
-            print("点({0:4.2f}, {1:4.2f}, {2:4.2f})から点({3:4.2f}, {4:4.2f}, {5:4.2f})までの反射光の計算．直線距離={6:4.2f}m, path length = {7:4.2f}m".format(x_g, y_g, z_g, x_c, y_c, z_c, r, Pr))
-            print("x_o = {0:4.2f}, x_residual = {1:4.2f}, dx = {2:4.2f}".format(x_o, x_residual, dx))
-            print()        
-        # (x_g, y_g, z_g)を中心とした微小面積dAからの，点(x_c, y_c, z_c)への反射光強度 (μmol m-2 s-1)を計算する．
-        dI_ref_h = reflect_coef_ground/ (2* np.pi) * dA * I_g_h *np.sin(beta) / (r**2) * np.exp(- O_av * L_t)
-        return dI_ref_h
-
-        ################################
-    
-    df_I_g_h["dI_ref_h"]  = df_I_g_h.swifter.apply(lambda row:cal_reflected_radiation_from_a_point(x_c, y_c, z_c, H_row, W_row, W_path, list_edge_negative_y, list_edge_positive_y, O_av, scatter_coef, reflect_coef_ground, LD, row["x_g"], row["y_g"], row["z_g"], row["dA"], row["I_g_h"]),axis=1)
-    I_ref_h = np.sum(df_I_g_h["dI_ref_h"])    
-    print("(x_c, y_c, z_c)=({0:4.2f}, {1:4.2f}, {2:4.2f}) における反射光強度 = {3:4.2f} umol m-2 s-1".format(x_c, y_c, z_c, I_ref_h))
-    return I_ref_h
 
 # %%
 def main(myTime, Solar_elev, azm_sun_row_coord, 
@@ -1966,33 +1636,6 @@ def preprocess_for_main(rfile):
     #######################
     # RHは0 - 100%なので、0 - 1.0に直す
     df_env["RH"] = df_env["RH"]/100
-
-    # dfs_results = df_env.swifter.apply(lambda row: main(row["Time"], row["Solar_elev"], row["azm_sun_row_coord"],
-    #                                                     row["d_y"], row["t_d"], row["ltt"], row["lng"], row["mrd"],
-    #                                                     row["azm"], row["alpha_c"], row["beta_c"],
-    #                                                     row["Ta"], row["RH"], row["Ca"], row["gb"], 
-    #                                                     row["I0_beam_h"], row["I0_dif_h"], df_radiation, df_I_g_h,
-    #                                                     a1, b1, a2, b2,
-    #                                                     list_edge_negative_y, list_edge_positive_y,
-    #                                                     x_row, y_row, z_row, x_btm, y_btm, z_btm, dV_row, dA_row, dA_btm,
-    #                                                     cfg), axis = 1)
-    
-    # vect_main = np.vectorize(main, excluded=["cfg"])
-    # dfs_results = vect_main(df_env["Time"], df_env["Solar_elev"], df_env["azm_sun_row_coord"],
-    #                         df_env["d_y"], df_env["t_d"], df_env["ltt"], df_env["lng"], df_env["mrd"],
-    #                         df_env["azm"], df_env["alpha_c"], df_env["beta_c"],
-    #                         df_env["Ta"], df_env["RH"], df_env["Ca"], df_env["gb"],
-    #                         df_env["I0_beam_h"], df_env["I0_dif_h"],
-    #                         df_env["H_row"], df_env["LD"],
-    #                         cfg = cfg)
-
-    # dfs_results = df_env.swifter.force_parallel(enable=True).apply(lambda row: main(row["Time"], row["Solar_elev"], row["azm_sun_row_coord"],
-    #                                                     row["d_y"], row["t_d"], row["ltt"], row["lng"], row["mrd"],
-    #                                                     row["azm"], row["alpha_c"], row["beta_c"],
-    #                                                     row["Ta"], row["RH"], row["Ca"], row["gb"], 
-    #                                                     row["I0_beam_h"], row["I0_dif_h"], 
-    #                                                     row["H_row"], row["LD"],                                                        
-    #                                                     cfg), axis = 1)
 
     dfs_results = df_env[["Time", "Solar_elev", "azm_sun_row_coord",
                           "d_y", "t_d", "ltt", "lng", "mrd",
