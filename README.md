@@ -1,7 +1,8 @@
 # Row Crop Photosynthesis Model 
-====
+A mathematical model for calculating the canopy photosynthetic rate of a row-planted crop canopy.  
+
 ## Description
-A mathematical model for calculating the canopy photosynthetic rate of a row-planted crop canopy.
+Please read our paper (not yet published).
 
 ## Demo
 
