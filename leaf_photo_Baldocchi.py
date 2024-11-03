@@ -258,8 +258,8 @@ def cal_leaf_photo (Vcmax, J, Gamma_star, Kc, Ko, Oxy, Rd, m, b_dash, rh, gb, Ca
             cubic_test_c.append(True)
         else:
             cubic_test_c.append(False)
-    if not np.any(cubic_test_c):
-        print(cubic_test_c)
+    #if not np.any(cubic_test_c):
+    #    print(cubic_test_c)
     #     print("Ac", Ac_list)
     #     print("Ca", Ca)
     #     #print("gs", gs_c_list)
@@ -283,7 +283,7 @@ def cal_leaf_photo (Vcmax, J, Gamma_star, Kc, Ko, Oxy, Rd, m, b_dash, rh, gb, Ca
                 Ac = dummy.real
                 gs_c = b_dash_co2.real
                 Ci_c = Ci_dummy.real
-                print("[OK]  ", Ac, gs_c, Ci_c)
+                #print("[OK]  ", Ac, gs_c, Ci_c)
             # else: # Ac_list_quadraticのうち、片方が[OK]であれば問題ないので、ここでもし[NOT OK]が出たとしても問題ない
             #     print("[NOT OK]  ", dummy, b_dash_co2, Ci_dummy)
             #     print("このとき、Ac = {0:4.2f}, gs_c = {1:4.2f}, Ci_c = {2:4.2f}".format(Ac, gs_c, Ci_c))
