@@ -17,13 +17,13 @@ A snapshot of the cross-sectional distribution of A<sub>L</sub>.
 ## Requirement
 - The calculation is CPU-intensive because the model calculates A<sub>L</sub> at all the defined grid points in the 3D canopy (e.g., 100 x 100 x 100 = 10<sup>6</sup>  points). Therefore, we recommend using a good CPU (e.g., Intel Core i9) to run the calculation.
 - Install the necessary packages in "requirements.txt".
-- The codes were written in a Linux environment. You might encounter unexpected errors if you run the codes in Windows/Mac environments.
+- The codes were written in a Linux environment. You may encounter unexpected errors if you run the codes in Windows/Mac environments.
 - We used Python version 3.10.12.
 
 ## Usage
 - Parameters are stored in "./sample/parameter_list_v2.yml".
 - Climate data are stored in "./sample/climate_data.csv".
-- The time-series data of the canopy height (Hr) and leaf area index (LAI) are stored in "./sample/canopy_geometry.csv". This data should be further processed using "canopy_geometry.py" to create "canopy_geometry_processed.py".
+- The time-series data of the canopy height (H<sub>r</sub>) and leaf area index (LAI) are stored in "./sample/canopy_geometry.csv". This data should be further processed using "canopy_geometry.py" to create "canopy_geometry_processed.csv".
 - After the preparation of the above three files (i.e., parameter_list_v2.yml, canopy_geometry_processed.csv, climate_data.csv), you can run "canopy_photo_greenhouse_v2.py", and you will find output files in "./sample/output" (output directory will be automatically created). It will take several minutes, depending on your CPU.
 - If you have the "./sample/output" directory, you cannot run "canopy_photo_greenhouse_v2.py" unless you remove that directory.
 - You can visualize the output file (in .feather extension) using "results_visualizer.py".
