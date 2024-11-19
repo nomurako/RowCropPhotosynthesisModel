@@ -4,7 +4,7 @@ A mathematical model for calculating the canopy photosynthetic rate (A<sub>c</su
 ## Description
 This model calculates A<sub>c</sub> of a row-planted crop canopy by numerically integrating the net leaf photosynthetic rate (A<sub>L</sub>) at grid points within the canopy. Here, A<sub>L</sub> is calculated by solving the simultaneous equations of the biochemical leaf photosynthesis model (<a href="https://link.springer.com/article/10.1007/BF00386231">Farquhar et al., 1980</a>), stomatal conductance model (<a href="https://link.springer.com/chapter/10.1007/978-94-017-0519-6_48">Ball et al., 1987</a>), and one-dimensional mass transport model (<a href="https://research.wur.nl/en/publications/photosynthesis-of-crop-plants-as-influenced-by-light-carbon-dioxi">Gaastra, 1959</a>) with the input of the absorbed PAR (I<sub>L</sub>) and other climatic variables. I<sub>L</sub> was calculated using the row-planted canopy model of <a href="https://www.sciencedirect.com/science/article/abs/pii/016819238990004X">Gijzen and Goudriaan (1989)</a> with some modifications. 
 
-For more details, please read our paper (under review).
+For more details, please read our paper ([Nomura et al. 2024](https://www.mdpi.com/2311-7524/10/11/1210)).
 
 ## Demo
 ### 3D simulation
@@ -32,7 +32,8 @@ A snapshot of the cross-sectional distribution of A<sub>L</sub>.
 Unfortunately, we have not organized the necessary files and codes in a user-friendly way yet. Please just clone the repository, install the necessary packages written in "requirement.txt", and run. 
 
 ## Licence
-[MIT](https://mit-license.org/)
+[MIT](https://mit-license.org/).  
+Please cite our work: Nomura, K., Saito, M., Tada, I., Yasutake, D., Kimura, K., & Kitano, M. (2024). Simulating the Photosynthetic and Annual-Yield Enhancement of a Row-Planted Greenhouse Tomato Canopy Through Diffuse Covering, CO2 Enrichment, and High-Wire Techniques. Horticulturae, 10(11), 1210. https://doi.org/10.3390/horticulturae10111210
 
 ## Author
 [Koichi Nomura](https://github.com/nomurako)
