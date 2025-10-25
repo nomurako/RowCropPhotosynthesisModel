@@ -149,7 +149,7 @@ def create_plan_heat_map_x_y_A_per_ground(df_results, list_edge_negative_y, vmin
     mappable.set_clim(vmin = vmin, vmax= vmax)
     sm = ScalarMappable(cmap="jet", norm=plt.Normalize(vmin, vmax))
     cbar = plt.colorbar(sm, orientation = "vertical", ax = ax, shrink = 0.5)
-    cbar.ax.set_ylabel('$\mathit{A}$$\mathrm{_c}$ ($\mathrm{\mu mol \; m^{-2}_{ground} \; s^{-1}}$)', rotation=270, labelpad=25)
+    cbar.ax.set_ylabel(r'$\mathit{A}$$\mathrm{_c}$ ($\mathrm{\mu mol \; m^{-2}_{ground} \; s^{-1}}$)', rotation=270, labelpad=25)
     plt.title(df_results["Time"][0].strftime("%Y-%m-%d_%H:%M"), fontsize = 12)
     
     # チャンバーやハウスの境界。
@@ -683,7 +683,7 @@ def read_feather(rdir, read_csv = True, output_fig = False, show_fig = True, to_
     ax1=plt.subplot(2,1,1)
     ax1.set_title("群落上部のPPFD",fontsize=15)
     ax1.xaxis.set_major_formatter(xfmt)
-    ax1.set_ylabel('$\mathrm{PPFD}$  \n ($\mathrm{\mu mol \; m^{-2}_{ground} \; s^{-1}}$)')
+    ax1.set_ylabel(r'$\mathrm{PPFD}$ ($\mathrm{\mu mol \; m^{-2}_{ground} \; s^{-1}}$)')
     plt.plot(df_diurnal["Time"], df_diurnal["I0_h"])        
 
     plt.legend(bbox_to_anchor=(0.98,0.98),loc=1,borderaxespad=0,edgecolor='none',
@@ -693,7 +693,7 @@ def read_feather(rdir, read_csv = True, output_fig = False, show_fig = True, to_
     ax2=plt.subplot(2,1,2)
     ax2.set_title("群落光合成速度",fontsize=15)
     ax2.xaxis.set_major_formatter(xfmt)
-    ax2.set_ylabel('群落光合成速度  \n ($\mathrm{\mu mol \; m^{-2}_{ground} \; s^{-1}}$)')
+    ax2.set_ylabel(r'群落光合成速度 ($\mathrm{\mu mol \; m^{-2}_{ground} \; s^{-1}}$)')
     plt.plot(df_diurnal["Time"], df_diurnal["A_per_ground"])        
 
     plt.legend(bbox_to_anchor=(0.98,0.98),loc=1,borderaxespad=0,edgecolor='none',
@@ -912,7 +912,7 @@ if __name__ == "__main__":
     ax1=plt.subplot(2,1,1)
     ax1.set_title("群落上部のPPFD",fontsize=15)
     ax1.xaxis.set_major_formatter(xfmt)
-    ax1.set_ylabel('$\mathrm{PPFD}$  \n ($\mathrm{\mu mol \; m^{-2}_{ground} \; s^{-1}}$)')
+    ax1.set_ylabel(r'$\mathrm{PPFD}$ ($\mathrm{\mu mol \; m^{-2}_{ground} \; s^{-1}}$)')
     plt.plot(df_diurnal["Time"], df_diurnal["I0_h"])        
 
     plt.legend(bbox_to_anchor=(0.98,0.98),loc=1,borderaxespad=0,edgecolor='none',
@@ -922,7 +922,7 @@ if __name__ == "__main__":
     ax2=plt.subplot(2,1,2)
     ax2.set_title("群落光合成速度",fontsize=15)
     ax2.xaxis.set_major_formatter(xfmt)
-    ax2.set_ylabel('群落光合成速度  \n ($\mathrm{\mu mol \; m^{-2}_{ground} \; s^{-1}}$)')
+    ax2.set_ylabel(r'群落光合成速度 ($\mathrm{\mu mol \; m^{-2}_{ground} \; s^{-1}}$)')
     plt.plot(df_diurnal["Time"], df_diurnal["A_per_ground"])        
 
     plt.legend(bbox_to_anchor=(0.98,0.98),loc=1,borderaxespad=0,edgecolor='none',
