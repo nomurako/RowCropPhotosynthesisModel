@@ -653,7 +653,7 @@ def read_feather(rdir, read_csv = True, output_fig = False, show_fig = True, to_
             if output_fig:
                 plot_3d_photo(df_results, to_be_visualized, list_edge_negative_y, list_edge_positive_y, H_row, vmin, vmax, df_results["I0_beam_h"][0], df_results["I0_dif_h"][0], A_per_ground, LAI, cfg, wdir, show_fig) #, wdir
                 create_cross_section_x_z(df_results, y, list_edge_negative_y, to_be_visualized, vmin, vmax, wdir, show_fig) #, wdir
-                create_plan_heat_map_x_y_A_per_ground(df_results, list_edge_negative_y, vmin, vmax, "A_per_ground", wdir, show_fig) #, wdir
+                create_plan_heat_map_x_y_A_per_ground(df_results, list_edge_negative_y, vmin, vmax, "A_per_ground", wdir=wdir, show_fig=show_fig) #, wdir
                 plt.close()
             # print("\nTime = {0}, \nA_per_ground = {1:4.2f} umol m-2 ground s-1".format(df_results["Time"][0], A_per_ground))
             # print("LAI = {0:3.2f}".format(LAI))
@@ -705,6 +705,7 @@ def read_feather(rdir, read_csv = True, output_fig = False, show_fig = True, to_
     fig.autofmt_xdate()
     plt.tight_layout()
     plt.show()
+    plt.close('all')
 
     df_diurnal.set_index("Time", inplace= True)
     if output_csv:
